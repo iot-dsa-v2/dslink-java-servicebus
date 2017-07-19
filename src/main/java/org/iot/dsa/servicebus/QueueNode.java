@@ -11,7 +11,7 @@ import org.iot.dsa.servicebus.node.MyDSNode;
 import org.iot.dsa.servicebus.node.MyValueType;
 import org.iot.dsa.servicebus.node.Utils;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
-import org.iot.dsa.servicebus.node.MyDSActionNode.InvokeHandler;
+import org.iot.dsa.servicebus.node.InvokeHandler;
 
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;

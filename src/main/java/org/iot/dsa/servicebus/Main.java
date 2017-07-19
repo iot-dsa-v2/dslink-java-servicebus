@@ -9,7 +9,7 @@ import org.iot.dsa.security.DSPermission;
 import org.iot.dsa.servicebus.node.MainDSNode;
 import org.iot.dsa.servicebus.node.MyDSActionNode;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
-import org.iot.dsa.servicebus.node.MyDSActionNode.InvokeHandler;
+import org.iot.dsa.servicebus.node.InvokeHandler;
 import org.iot.dsa.servicebus.node.MyValueType;
 
 public class Main extends MainDSNode {

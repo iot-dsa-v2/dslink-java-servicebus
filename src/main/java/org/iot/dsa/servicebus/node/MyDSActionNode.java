@@ -116,10 +116,6 @@ public class MyDSActionNode extends MyDSNode implements ActionSpec {
 		return null;
 	}
 	
-	public static interface InvokeHandler {
-		public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle);
-	}
-	
 	public static class InboundInvokeRequestHandle {
 		InboundInvokeRequest req;
 
