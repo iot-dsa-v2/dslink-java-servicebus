@@ -1,15 +1,16 @@
 package org.iot.dsa.servicebus;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.security.DSPermission;
 import org.iot.dsa.servicebus.node.MyDSActionNode;
 import org.iot.dsa.servicebus.node.MyDSNode;
 import org.iot.dsa.servicebus.node.MyDSValueNode;
+import org.iot.dsa.servicebus.node.MyValueType;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InvokeHandler;
 
@@ -86,9 +87,9 @@ public class ServiceBusNode extends MyDSNode {
 		
 		try {
 			ListQueuesResult qresult = service.listQueues();
-			populateQueues(qresult.getItems(), onStart);
+			makeAddQueueAction(qresult.getItems(), onStart);
 			ListTopicsResult tresult = service.listTopics();
-			populateTopics(tresult.getItems(), onStart);
+			makeAddTopicAction(tresult.getItems(), onStart);
 			statNode.setValue(DSElement.make("Connected"));
 		} catch (ServiceException e) {
 			statNode.setValue(DSElement.make("Service Exception"));
@@ -98,20 +99,37 @@ public class ServiceBusNode extends MyDSNode {
 		makeEditAction(onStart);
 	}
 	
-	private void populateQueues(List<QueueInfo> queues, boolean onStart) {
-		queuesNode.clear();
+	private void makeAddQueueAction(List<QueueInfo> queues, boolean onStart) {
+		List<String> queueNames = new ArrayList<String>();
 		for (QueueInfo qInfo: queues) {
-			queuesNode.addChild(qInfo.getPath(), new QueueNode(qInfo, this), onStart);
+			queueNames.add(qInfo.getPath());
 		}
+		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+			@Override
+			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
+				addQueue(parameters);
+				return new ActionResult() {};
+			}
+		});
+		act.addParameter("Queue_Name", null, MyValueType.enumOf(queueNames), null, null);
+		addChild("Add_Queue", act, onStart);
 	}
-	
-	private void populateTopics(List<TopicInfo> topics, boolean onStart) {
-		topicsNode.clear();
+
+	private void makeAddTopicAction(List<TopicInfo> topics, boolean onStart) {
+		List<String> topicNames = new ArrayList<String>();
 		for (TopicInfo tInfo: topics) {
-			topicsNode.addChild(tInfo.getPath(), new TopicNode(tInfo, this), onStart);
+			topicNames.add(tInfo.getPath());
 		}
+		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+			@Override
+			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
+				addTopic(parameters);
+				return new ActionResult() {};
+			}
+		});
+		act.addParameter("Topic_Name", null, MyValueType.enumOf(topicNames), null, null);
+		addChild("Add_Topic", act, onStart);
 	}
-	
 	
 	private void makeRemoveAction(boolean onStart) {
 		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
@@ -158,7 +176,7 @@ public class ServiceBusNode extends MyDSNode {
 				return new ActionResult() {};
 			}
     	});
-		act.addParameter("Name", null, DSValueType.STRING, null, null);
+		act.addParameter("Name", null, MyValueType.STRING, null, null);
 		addChild("Create_Queue", act, onStart);
 	}
 
@@ -170,7 +188,7 @@ public class ServiceBusNode extends MyDSNode {
 				return new ActionResult() {};
 			}
     	});
-		act.addParameter("Name", null, DSValueType.STRING, null, null);
+		act.addParameter("Name", null, MyValueType.STRING, null, null);
 		addChild("Create_Topic", act, onStart);
 	}
 	
@@ -181,6 +199,18 @@ public class ServiceBusNode extends MyDSNode {
     	key = parameters.getString("SAS_Key");
     	rootUri = parameters.getString("Service_Bus_Root_Uri");
     	init(false);
+	}
+	
+	private void addQueue(DSMap parameters) {
+		String name = parameters.getString("Queue_Name");
+		QueueInfo qInfo = new QueueInfo(name);
+		queuesNode.addChild(qInfo.getPath(), new QueueNode(qInfo, this), false);
+	}
+	
+	private void addTopic(DSMap parameters) {
+		String name = parameters.getString("Topic_Name");
+		TopicInfo tInfo = new TopicInfo(name);
+		topicsNode.addChild(tInfo.getPath(), new TopicNode(tInfo, this), false);
 	}
 	
 	private void createQueue(DSMap parameters) {

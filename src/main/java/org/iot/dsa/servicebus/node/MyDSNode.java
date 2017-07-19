@@ -15,9 +15,9 @@ import org.iot.dsa.dslink.responder.OutboundListResponse;
 import org.iot.dsa.dslink.responder.SubscriptionCloseHandler;
 import org.iot.dsa.node.DSContainer;
 import org.iot.dsa.node.DSElement;
+import org.iot.dsa.node.DSIObject;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSNode;
-import org.iot.dsa.node.DSObject;
 import org.iot.dsa.security.DSPermission;
 
 public class MyDSNode extends DSNode implements ApiNode {
@@ -118,7 +118,7 @@ public class MyDSNode extends DSNode implements ApiNode {
 			path = path.substring(1);
 		}
 		String[] arr = path.split("/", 2);
-		DSObject obj = get(arr[0]);
+		DSIObject obj = get(arr[0]);
 		MyDSNode node = null;
 		String restOfPath = arr.length > 1 ? arr[1] : "";
 		if (obj instanceof MyDSNode) {
@@ -136,7 +136,7 @@ public class MyDSNode extends DSNode implements ApiNode {
 	public Iterator<ApiObject> getChildren() {
 		List<ApiObject> childs = new ArrayList<ApiObject>();
 		for (int i=0; i< childCount(); i++) {
-			DSObject obj = get(i);
+			DSIObject obj = get(i);
 			if (obj instanceof ApiObject) {
 				childs.add((ApiObject) obj);
 			}
@@ -150,10 +150,10 @@ public class MyDSNode extends DSNode implements ApiNode {
 		
 	}
 	
-	public void addChild(String name, MyDSNode child, boolean preStart) {
+	public void addChild(String name, MyDSNode child, boolean onStart) {
 		put(name, child);
 		setCachedName();
-		if (!preStart) {
+		if (!onStart) {
 			child.start();
 		}
 		if (listHandle != null) {
@@ -162,8 +162,8 @@ public class MyDSNode extends DSNode implements ApiNode {
 	}
 	
 	@Override
-	public DSObject remove(int idx) {
-		DSObject child = super.remove(idx);
+	public DSIObject remove(int idx) {
+		DSIObject child = super.remove(idx);
 		if (listHandle != null && child instanceof ApiNode) {
 			listHandle.childRemoved((ApiNode) child);
 		}

@@ -2,9 +2,9 @@ package org.iot.dsa.servicebus.node;
 
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSValueType;
-import org.iot.dsa.node.action.ActionTableColumn;
+import org.iot.dsa.node.action.ActionResultSpec;
 
-public class MyColumn implements ActionTableColumn {
+public class MyColumn implements ActionResultSpec {
 	
 	String name;
 	DSValueType type;

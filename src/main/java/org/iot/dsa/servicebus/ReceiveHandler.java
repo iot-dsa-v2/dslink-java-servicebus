@@ -16,8 +16,9 @@ import org.iot.dsa.node.DSList;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionResult;
+import org.iot.dsa.node.action.ActionResultSpec;
 import org.iot.dsa.node.action.ActionTable;
-import org.iot.dsa.node.action.ActionTableColumn;
+import org.iot.dsa.servicebus.node.MyColumn;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InvokeHandler;
 
@@ -53,50 +54,11 @@ public class ReceiveHandler extends DSLogger implements InvokeHandler {
 				return new ArrayList<DSList>().iterator();
 			}
 			@Override
-			public Iterator<ActionTableColumn> getColumns() {
-				ActionTableColumn c1 = new ActionTableColumn() {
-					@Override
-					public DSValueType getType() {
-						return DSValueType.STRING;
-					}
-					@Override
-					public String getName() {
-						return "ID";
-					}
-					@Override
-					public DSMap getMetaData() {
-						return null;
-					}
-				};
-				ActionTableColumn c2 = new ActionTableColumn() {
-					@Override
-					public DSValueType getType() {
-						return DSValueType.STRING;
-					}
-					@Override
-					public String getName() {
-						return "Timestamp";
-					}
-					@Override
-					public DSMap getMetaData() {
-						return null;
-					}
-				};
-				ActionTableColumn c3 = new ActionTableColumn() {
-					@Override
-					public DSValueType getType() {
-						return DSValueType.STRING;
-					}
-					@Override
-					public String getName() {
-						return "Body";
-					}
-					@Override
-					public DSMap getMetaData() {
-						return null;
-					}
-				};
-				List<ActionTableColumn> colList = new ArrayList<ActionTableColumn>();
+			public Iterator<ActionResultSpec> getColumns() {
+				ActionResultSpec c1 = new MyColumn("ID", DSValueType.STRING);
+				ActionResultSpec c2 = new MyColumn("Timestamp", DSValueType.STRING);
+				ActionResultSpec c3 = new MyColumn("Body", DSValueType.STRING);	
+				List<ActionResultSpec> colList = new ArrayList<ActionResultSpec>();
 				colList.add(c1);
 				colList.add(c2);
 				colList.add(c3);

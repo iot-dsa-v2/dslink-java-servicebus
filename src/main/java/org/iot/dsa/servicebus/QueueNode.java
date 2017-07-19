@@ -3,12 +3,13 @@ package org.iot.dsa.servicebus;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSMap.Entry;
-import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.ActionSpec.ResultSpec;
+import org.iot.dsa.node.action.ActionSpec.ResultType;
 import org.iot.dsa.security.DSPermission;
 import org.iot.dsa.servicebus.node.MyDSActionNode;
 import org.iot.dsa.servicebus.node.MyDSNode;
+import org.iot.dsa.servicebus.node.MyValueType;
+import org.iot.dsa.servicebus.node.Utils;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InvokeHandler;
 
@@ -53,15 +54,15 @@ public class QueueNode extends MyDSNode implements ReceiverNode {
 				return new ActionResult() {};
 			}
 		});
-		act.addParameter("Message", null, DSValueType.STRING, null, null);
-		act.addParameter("Properties", null, DSValueType.MAP, null, null);
+		act.addParameter("Message", null, MyValueType.STRING, null, null);
+		act.addParameter("Properties", new DSMap(), MyValueType.MAP, null, null);
 		addChild("Send_Message", act, onStart);
 	}
 	
 	private void makeReadAction(boolean onStart) {
 		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new ReceiveHandler(this));
 		act.addParameter("Use_Peek-Lock", DSElement.make(true), null, null, null);
-		act.setResultSpec(ResultSpec.STREAM_TABLE);
+		act.setResultType(ResultType.STREAM_TABLE);
 		addChild("Recieve_Messages", act, onStart);
 	}
 	
@@ -69,17 +70,18 @@ public class QueueNode extends MyDSNode implements ReceiverNode {
 		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
 			@Override
 			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				handleDelete();
+				handleDelete(parameters);
 				return new ActionResult() {};
 			}
     	});
-		addChild("Delete", act, onStart);
+		act.addParameter("Delete_From_Namespace", DSElement.make(false), null, null, null);
+		addChild("Remove", act, onStart);
 	}
 	
 	
 	private void handleSend(DSMap parameters) {
 		String messageText = parameters.getString("Message");
-		DSMap properties = parameters.getMap("Properties");
+		DSMap properties = Utils.getMap(parameters, "Properties");
 		BrokeredMessage message = new BrokeredMessage(messageText);
 		for (int i = 0; i < properties.size(); i++) {
 			Entry entry = properties.getEntry(i);
@@ -93,14 +95,16 @@ public class QueueNode extends MyDSNode implements ReceiverNode {
 		}
 	}
 	
-	private void handleDelete() {
-		try {
-			serviceNode.getService().deleteQueue(info.getPath());;
-			delete();
-		} catch (ServiceException e) {
-			// TODO Send Error
-			warn("Error Deleting Queue: " + e);
+	private void handleDelete(DSMap parameters) {
+		if (parameters.get("Delete_From_Namespace", false)) {
+			try {
+				serviceNode.getService().deleteQueue(info.getPath());;
+			} catch (ServiceException e) {
+				// TODO Send Error
+				warn("Error Deleting Queue: " + e);
+			}
 		}
+		delete();
 	}
 	
 	@Override

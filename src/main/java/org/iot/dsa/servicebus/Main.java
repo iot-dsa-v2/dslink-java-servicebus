@@ -4,13 +4,13 @@ import org.iot.dsa.dslink.DSLink;
 import org.iot.dsa.dslink.DSLinkConfig;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.security.DSPermission;
 import org.iot.dsa.servicebus.node.MainDSNode;
 import org.iot.dsa.servicebus.node.MyDSActionNode;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InvokeHandler;
+import org.iot.dsa.servicebus.node.MyValueType;
 
 public class Main extends MainDSNode {
     
@@ -33,10 +33,10 @@ public class Main extends MainDSNode {
 				return new ActionResult() {};
 			}
     	});
-    	act.addParameter("Name", DSElement.make("danielbus"), DSValueType.STRING, null, null);
-    	act.addParameter("Namespace", DSElement.make("danielbus"), DSValueType.STRING, null, null);
+    	act.addParameter("Name", DSElement.make("danielbus"), MyValueType.STRING, null, null);
+    	act.addParameter("Namespace", DSElement.make("danielbus"), MyValueType.STRING, null, null);
     	act.addParameter("SAS_Key_Name", DSElement.make("RootManageSharedAccessKey"), null, null, null);
-    	act.addParameter("SAS_Key", DSElement.make("P+jvN1egFsUXuadbdPENAeIF5p2MglAbFDZLUVp8EGw="), DSValueType.STRING, null, null);
+    	act.addParameter("SAS_Key", DSElement.make("P+jvN1egFsUXuadbdPENAeIF5p2MglAbFDZLUVp8EGw="), MyValueType.STRING, null, null);
     	act.addParameter("Service_Bus_Root_Uri", DSElement.make(".servicebus.windows.net"), null, null, null);
     	addChild("Add_Service_Bus", act, true);
     }

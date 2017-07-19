@@ -4,7 +4,7 @@ apply plugin: 'application'
 mainClassName = 'org.iot.dsa.servicebus.Main'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-version = '0.0.1-SNAPSHOT'
+version = '0.0.2-SNAPSHOT'
 
 repositories {
     jcenter()

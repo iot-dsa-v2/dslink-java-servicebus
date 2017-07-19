@@ -1,15 +1,17 @@
 package org.iot.dsa.servicebus;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSObject;
-import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.DSMap.Entry;
 import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.security.DSPermission;
 import org.iot.dsa.servicebus.node.MyDSActionNode;
 import org.iot.dsa.servicebus.node.MyDSNode;
+import org.iot.dsa.servicebus.node.MyValueType;
+import org.iot.dsa.servicebus.node.Utils;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InvokeHandler;
 
@@ -53,6 +55,7 @@ public class TopicNode extends MyDSNode {
 		makeSendAction(true);
 		makeCreateSubscriptionAction(true);
 		makeDeleteAction(true);
+		makeRefreshAction(true);
 		
 		init(true);
 	}
@@ -60,26 +63,37 @@ public class TopicNode extends MyDSNode {
 	private void init(boolean onStart) {
 		try {
 			ListSubscriptionsResult result = getService().listSubscriptions(info.getPath());
-			populateSubscriptions(result.getItems(), onStart);
+			makeAddSubscriptionAction(result.getItems(), onStart);
 		} catch (ServiceException e) {
 			warn("Error listing subscriptions: " + e);
 		}
 	}
 	
-	private void populateSubscriptions(List<SubscriptionInfo> subscriptions, boolean onStart) {
-		clearSubscriptions();
-		for (SubscriptionInfo info: subscriptions) {
-			addChild(info.getName(), new SubscriptionNode(info, this), onStart);
-		}
+	private void makeRefreshAction(boolean onStart) {
+		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+			@Override
+			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
+				init(false);
+				return new ActionResult() {};
+			}
+    	});
+		addChild("Refresh", act, onStart);
 	}
 	
-	private void clearSubscriptions() {
-		for (int i=0; i< childCount(); i++) {
-			DSObject obj = get(i);
-			if (obj instanceof SubscriptionNode) {
-				((SubscriptionNode) obj).delete();
-			}
+	private void makeAddSubscriptionAction(List<SubscriptionInfo> subscriptions, boolean onStart) {
+		List<String> subNames = new ArrayList<String>();
+		for (SubscriptionInfo sInfo: subscriptions) {
+			subNames.add(sInfo.getName());
 		}
+		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+			@Override
+			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
+				addSubscription(parameters);
+				return new ActionResult() {};
+			}
+		});
+		act.addParameter("Subscription_Name", null, MyValueType.enumOf(subNames), null, null);
+		addChild("Add_Subscription", act, onStart);	
 	}
 	
 	private void makeSendAction(boolean onStart) {
@@ -90,8 +104,8 @@ public class TopicNode extends MyDSNode {
 				return new ActionResult() {};
 			}
 		});
-		act.addParameter("Message", null, DSValueType.STRING, null, null);
-		act.addParameter("Properties", null, DSValueType.MAP, null, null);
+		act.addParameter("Message", null, MyValueType.STRING, null, null);
+		act.addParameter("Properties", new DSMap(), MyValueType.MAP, null, null);
 		addChild("Send_Message", act, onStart);
 	}
 	
@@ -103,7 +117,7 @@ public class TopicNode extends MyDSNode {
 				return new ActionResult() {};
 			}
     	});
-		act.addParameter("Name", null, DSValueType.STRING, null, null);
+		act.addParameter("Name", null, MyValueType.STRING, null, null);
 		addChild("Create_Subscription", act, onStart);
 	}
 	
@@ -111,17 +125,24 @@ public class TopicNode extends MyDSNode {
 		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
 			@Override
 			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				handleDelete();
+				handleDelete(parameters);
 				return new ActionResult() {};
 			}
     	});
-		addChild("Delete", act, onStart);
+		act.addParameter("Delete_From_Namespace", DSElement.make(false), null, null, null);
+		addChild("Remove", act, onStart);
 	}
 	
 	
+	private void addSubscription(DSMap parameters) {
+		String name = parameters.getString("Subscription_Name");
+		SubscriptionInfo sInfo = new SubscriptionInfo(name);
+		addChild(sInfo.getName(), new SubscriptionNode(sInfo, this), false);
+	}
+	
 	private void handleSend(DSMap parameters) {
 		String messageText = parameters.getString("Message");
-		DSMap properties = parameters.getMap("Properties");
+		DSMap properties = Utils.getMap(parameters, "Properties");
 		BrokeredMessage message = new BrokeredMessage(messageText);
 		for (int i = 0; i < properties.size(); i++) {
 			Entry entry = properties.getEntry(i);
@@ -147,14 +168,16 @@ public class TopicNode extends MyDSNode {
 		}
 	}
 	
-	private void handleDelete() {
-		try {
-			getService().deleteTopic(info.getPath());
-			delete();
-		} catch (ServiceException e) {
-			// TODO Send Error
-			warn("Error Deleting Topic: " + e);
+	private void handleDelete(DSMap parameters) {
+		if (parameters.get("Delete_From_Namespace", false)) {
+			try {
+				getService().deleteTopic(info.getPath());
+			} catch (ServiceException e) {
+				// TODO Send Error
+				warn("Error Deleting Topic: " + e);
+			}
 		}
+		delete();
 	}
 	
 

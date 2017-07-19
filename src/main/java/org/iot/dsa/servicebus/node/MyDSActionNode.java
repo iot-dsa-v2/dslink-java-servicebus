@@ -11,14 +11,15 @@ import org.iot.dsa.node.DSList;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionResult;
+import org.iot.dsa.node.action.ActionResultSpec;
 import org.iot.dsa.node.action.ActionSpec;
 import org.iot.dsa.security.DSPermission;
 
 public class MyDSActionNode extends MyDSNode implements ActionSpec {
 	
 	private final List<DSMap> parameters = new ArrayList<DSMap>();
-	private final DSList columns = new DSList();
-	private ResultSpec resType = ResultSpec.VOID;
+	private final List<ActionResultSpec> columns = new ArrayList<ActionResultSpec>();
+	private ResultType resType = ResultType.VOID;
 	private DSPermission invokable;
 	private InvokeHandler handler;
 	
@@ -42,16 +43,11 @@ public class MyDSActionNode extends MyDSNode implements ActionSpec {
 		if (name == null || type == null) {
 			return;
 		}
-		DSMap col = columns.addMap();
-		col.put("name", name);
-		col.put("type", type.toString());
-		if (def != null) {
-			col.put("default", def);
-		}
-		
+		MyColumn col = new MyColumn(name, type);
+		columns.add(col);
 	}
 
-	public void addParameter(String name, DSElement def, DSValueType type, String description, String placeholder) {
+	public void addParameter(String name, DSElement def, MyValueType type, String description, String placeholder) {
 		if (name == null || (def == null && type == null)) {
 			return;
 		}
@@ -78,12 +74,12 @@ public class MyDSActionNode extends MyDSNode implements ActionSpec {
 		return parameters.iterator();
 	}
 
-	public void setResultSpec(ResultSpec resType) {
+	public void setResultType(ResultType resType) {
 		this.resType = resType;
 	}
 	
 	@Override
-	public ResultSpec getResultSpec() {
+	public ResultType getResultType() {
 		return resType;
 	}
 
@@ -166,7 +162,12 @@ public class MyDSActionNode extends MyDSNode implements ActionSpec {
 	
 	@Override
 	public void getMetaData(DSMap metaData) {
-		metaData.put("columns", columns.copy());
+//		metaData.put("columns", columns.copy());
+	}
+
+	@Override
+	public Iterator<ActionResultSpec> getResultSpecs() {
+		return columns.iterator();
 	}
 
 }
