@@ -3,7 +3,7 @@ package org.iot.dsa.servicebus.node;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.iot.dsa.node.DSValueType;
 
 public class MyValueType {
@@ -40,7 +40,7 @@ public class MyValueType {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(type.toString());
-		if (sb != null) {
+		if (states != null) {
 			sb.append("[").append(StringUtils.join(states, ',')).append("]");
 		}
 		return sb.toString();

@@ -11,7 +11,6 @@ import org.iot.dsa.security.DSPermission;
 import org.iot.dsa.servicebus.node.MyDSActionNode;
 import org.iot.dsa.servicebus.node.MyDSNode;
 import org.iot.dsa.servicebus.node.MyValueType;
-import org.iot.dsa.servicebus.node.Utils;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
 import org.iot.dsa.servicebus.node.InvokeHandler;
 
@@ -142,7 +141,7 @@ public class TopicNode extends MyDSNode {
 	
 	private void handleSend(DSMap parameters) {
 		String messageText = parameters.getString("Message");
-		DSMap properties = Utils.getMap(parameters, "Properties");
+		DSMap properties = parameters.getMap("Properties");
 		BrokeredMessage message = new BrokeredMessage(messageText);
 		for (int i = 0; i < properties.size(); i++) {
 			Entry entry = properties.getEntry(i);
