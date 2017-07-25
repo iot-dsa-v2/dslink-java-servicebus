@@ -4,7 +4,7 @@ apply plugin: 'application'
 mainClassName = 'org.iot.dsa.servicebus.Main'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-version = '0.0.2-SNAPSHOT'
+version = '0.0.3-SNAPSHOT'
 
 repositories {
     jcenter()
@@ -30,3 +30,5 @@ run {
     args System.getProperty("exec.args", "").split()
     workingDir project.buildDir
 }
+
+applicationDistribution.from new File(project.projectDir, "/dslink.json")

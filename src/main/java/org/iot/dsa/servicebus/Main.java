@@ -42,10 +42,7 @@ public class Main extends MainDSNode {
     }
     
     public static void main(String[] args) throws Exception {
-		DSLinkConfig cfg = new DSLinkConfig(args)
-                .setRootName("Service Bus")
-                .setRootType(Main.class)
-                .setBrokerUri("http://localhost:8080/conn");
+		DSLinkConfig cfg = new DSLinkConfig(args);
         DSLink link = new DSLink(cfg);
         link.start();
 	}

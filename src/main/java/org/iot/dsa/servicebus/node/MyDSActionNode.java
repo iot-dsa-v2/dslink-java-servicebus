@@ -39,7 +39,7 @@ public class MyDSActionNode extends MyDSNode implements ActionSpec {
 		this.handler = handler;
 	}
 	
-	public void addColumn(String name, DSValueType type, DSElement def) {
+	public void addColumn(String name, DSValueType type) {
 		if (name == null || type == null) {
 			return;
 		}
