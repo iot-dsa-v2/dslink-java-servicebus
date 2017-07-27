@@ -1,5 +1,6 @@
 package org.iot.dsa.servicebus;
 
+import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.action.ActionResult;
@@ -65,24 +66,18 @@ public class SubscriptionNode extends MyDSNode implements ReceiverNode {
 			try {
 				topicNode.getService().deleteSubscription(topicNode.getTopicName(), info.getName());
 			} catch (ServiceException e) {
-				// TODO Send Error
 				warn("Error Deleting Subscription: " + e);
+				throw new DSRequestException(e.getMessage());
 			}
 		}
 		delete();
 	}
 
 	@Override
-	public BrokeredMessage receiveMessage(ReceiveMessageOptions opts) {
+	public BrokeredMessage receiveMessage(ReceiveMessageOptions opts) throws ServiceException {
 		ReceiveSubscriptionMessageResult resultSubMsg;
-		try {
-			resultSubMsg = topicNode.getService()
-					.receiveSubscriptionMessage(topicNode.getTopicName(), info.getName(), opts);
-			return resultSubMsg.getValue();
-		} catch (ServiceException e) {
-			warn("Error Receiving Message: " + e);
-		}
-		return null;
+		resultSubMsg = topicNode.getService().receiveSubscriptionMessage(topicNode.getTopicName(), info.getName(), opts);
+		return resultSubMsg.getValue();
 	}
 	
 	@Override

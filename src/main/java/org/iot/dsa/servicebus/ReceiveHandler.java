@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.iot.dsa.DSRuntime;
 import org.iot.dsa.DSRuntime.Timer;
+import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.logging.DSLogger;
 import org.iot.dsa.node.DSList;
 import org.iot.dsa.node.DSMap;
@@ -22,6 +23,7 @@ import org.iot.dsa.servicebus.node.InvokeHandler;
 import org.iot.dsa.servicebus.node.MyColumn;
 import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
 
+import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveMessageOptions;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveMode;
@@ -85,27 +87,32 @@ public class ReceiveHandler extends DSLogger implements InvokeHandler {
 		@Override
 		public void run() {
 			while(!reqHandle.isClosed()) {
-				BrokeredMessage message = receiverNode.receiveMessage(opts);
-				if (message == null) {
-					break;
-				} else if (message.getMessageId() != null) {
-					String id = message.getMessageId();
-					byte[] b = new byte[200];
-					StringBuilder s = new StringBuilder();
-					try {
-						int numRead = message.getBody().read(b);
-						while (-1 != numRead) {
-							s.append(new String(b));
-							numRead = message.getBody().read(b);
+				try {
+					BrokeredMessage message = receiverNode.receiveMessage(opts);
+					if (message == null) {
+						break;
+					} else if (message.getMessageId() != null) {
+						String id = message.getMessageId();
+						byte[] b = new byte[200];
+						StringBuilder s = new StringBuilder();
+						try {
+							int numRead = message.getBody().read(b);
+							while (-1 != numRead) {
+								s.append(new String(b));
+								numRead = message.getBody().read(b);
+							}
+						} catch (IOException e) {
+							warn(e);
 						}
-					} catch (IOException e) {
-						warn(e);
+						String date = dateFormat.format(message.getDate());
+						reqHandle.send(new DSList().add(id).add(date).add(s.toString().trim()));
+						if (opts.isPeekLock()) {
+							receiverNode.deleteMessage(message);
+						}
 					}
-					String date = dateFormat.format(message.getDate());
-					reqHandle.send(new DSList().add(id).add(date).add(s.toString().trim()));
-					if (opts.isPeekLock()) {
-						receiverNode.deleteMessage(message);
-					}
+				} catch (ServiceException e) {
+					warn("Error Receiving Message: " + e);
+					reqHandle.close(new DSRequestException(e.getMessage()));
 				}
 			}
 			if (reqHandle.isClosed() && myTimer != null) {

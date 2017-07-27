@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.glassfish.grizzly.utils.Pair;
+import org.iot.dsa.dslink.DSInvalidPathException;
+import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.dslink.responder.ApiNode;
 import org.iot.dsa.dslink.responder.ApiObject;
 import org.iot.dsa.dslink.responder.InboundInvokeRequest;
@@ -16,6 +18,7 @@ import org.iot.dsa.dslink.responder.SubscriptionCloseHandler;
 import org.iot.dsa.node.DSContainer;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSIObject;
+import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSNode;
 import org.iot.dsa.security.DSPermission;
@@ -29,7 +32,7 @@ public class MyDSNode extends DSNode implements ApiNode {
 	
 	public OutboundInvokeResponse onInvoke(InboundInvokeRequest req, String path) {
 		if (path.isEmpty() || path.equals("/")) {
-			return null;
+			throw new DSRequestException("Path not invokable");
 		} else {
 			Pair<MyDSNode, String> pair = traverseDown(path);
 			MyDSNode child = pair.getFirst();
@@ -37,7 +40,7 @@ public class MyDSNode extends DSNode implements ApiNode {
 			if (child != null) {
 				return child.onInvoke(req, restOfPath);
 			}
-			return null;
+			throw new DSInvalidPathException(req.getPath());
 		}
 	}
 	
@@ -80,16 +83,7 @@ public class MyDSNode extends DSNode implements ApiNode {
 			MyDSNode child = pair.getFirst();
 			String restOfPath = pair.getSecond();
 			if (child == null) {
-				return new OutboundListResponse() {
-					@Override
-					public ApiObject getTarget() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					@Override
-					public void onClose() {
-					}
-				};
+				throw new DSInvalidPathException(req.getPath());
 			}
 			return child.onList(req, restOfPath);
 		}
@@ -103,14 +97,22 @@ public class MyDSNode extends DSNode implements ApiNode {
 			MyDSNode child = pair.getFirst();
 			String restOfPath = pair.getSecond();
 			if (child == null) {
-				return null;
+				return new SubscriptionCloseHandler() {
+					@Override
+					public void onClose(Integer subscriptionId) {
+					}
+				};
 			}
 			return child.onSubscribe(req, restOfPath);
 		}
 	}
 	
 	protected SubscriptionCloseHandler subscribe(InboundSubscribeRequest req) {
-		return null;
+		return new SubscriptionCloseHandler() {
+			@Override
+			public void onClose(Integer subscriptionId) {
+			}
+		};
 	}
 	
 	private Pair<MyDSNode, String> traverseDown(String path) {
@@ -162,12 +164,13 @@ public class MyDSNode extends DSNode implements ApiNode {
 	}
 	
 	@Override
-	public DSIObject remove(int idx) {
-		DSIObject child = super.remove(idx);
+	public DSInfo remove(int idx) {
+		DSInfo info = super.remove(idx);
+		DSIObject child = info.getObject();
 		if (listHandle != null && child instanceof ApiNode) {
 			listHandle.childRemoved((ApiNode) child);
 		}
-		return child;
+		return info;
 	}
 	
 	

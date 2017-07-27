@@ -3,6 +3,7 @@ package org.iot.dsa.servicebus;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.action.ActionResult;
@@ -219,8 +220,8 @@ public class ServiceBusNode extends MyDSNode {
 			service.createQueue(queueInfo);
 			queuesNode.addChild(queueInfo.getPath(), new QueueNode(queueInfo, this), false);
 		} catch (ServiceException e) {
-			// TODO Send Error
 			warn("Error Creating Queue: " + e);
+			throw new DSRequestException(e.getMessage());
 		}
 	}
 	
@@ -231,8 +232,8 @@ public class ServiceBusNode extends MyDSNode {
 			service.createTopic(topicInfo);
 			topicsNode.addChild(topicInfo.getPath(), new TopicNode(topicInfo, this), false);
 		} catch (ServiceException e) {
-			// TODO Send Error
 			warn("Error Creating Topic: " + e);
+			throw new DSRequestException(e.getMessage());
 		}
 	}
 	

@@ -3,6 +3,7 @@ package org.iot.dsa.servicebus;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSMap.Entry;
@@ -150,8 +151,8 @@ public class TopicNode extends MyDSNode {
 		try {
 			getService().sendTopicMessage(info.getPath(), message);
 		} catch (ServiceException e) {
-			// TODO Send Error
 			warn("Error Sending Message: " + e);
+			throw new DSRequestException(e.getMessage());
 		}
 	}
 	
@@ -162,8 +163,8 @@ public class TopicNode extends MyDSNode {
 			getService().createSubscription(info.getPath(), sinfo);
 			addChild(sinfo.getName(), new SubscriptionNode(sinfo, this), false);
 		} catch (ServiceException e) {
-			// TODO Send Error
 			warn("Error Creating Subscription: " + e);
+			throw new DSRequestException(e.getMessage());
 		}
 	}
 	
@@ -172,8 +173,8 @@ public class TopicNode extends MyDSNode {
 			try {
 				getService().deleteTopic(info.getPath());
 			} catch (ServiceException e) {
-				// TODO Send Error
 				warn("Error Deleting Topic: " + e);
+				throw new DSRequestException(e.getMessage());
 			}
 		}
 		delete();

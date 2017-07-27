@@ -1,5 +1,6 @@
 package org.iot.dsa.servicebus.node;
 
+import org.iot.dsa.dslink.DSPermissionException;
 import org.iot.dsa.dslink.responder.ApiValue;
 import org.iot.dsa.dslink.responder.InboundSubscribeRequest;
 import org.iot.dsa.dslink.responder.SubscriptionCloseHandler;
@@ -60,6 +61,8 @@ public class MyDSValueNode extends MyDSNode implements ApiValue {
 			if (handler != null) {
 				handler.handle(new ValuePair(old, value));
 			}
+		} else {
+			throw new DSPermissionException("");
 		}
 	}
 	

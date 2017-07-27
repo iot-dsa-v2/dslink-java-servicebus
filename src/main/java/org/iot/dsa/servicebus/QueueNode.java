@@ -1,5 +1,6 @@
 package org.iot.dsa.servicebus;
 
+import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSMap.Entry;
@@ -89,8 +90,8 @@ public class QueueNode extends MyDSNode implements ReceiverNode {
 		try {
 			serviceNode.getService().sendQueueMessage(info.getPath(), message);
 		} catch (ServiceException e) {
-			// TODO Send Error
 			warn("Error Sending Message: " + e);
+			throw new DSRequestException(e.getMessage());
 		}
 	}
 	
@@ -99,23 +100,18 @@ public class QueueNode extends MyDSNode implements ReceiverNode {
 			try {
 				serviceNode.getService().deleteQueue(info.getPath());;
 			} catch (ServiceException e) {
-				// TODO Send Error
 				warn("Error Deleting Queue: " + e);
+				throw new DSRequestException(e.getMessage());
 			}
 		}
 		delete();
 	}
 	
 	@Override
-	public BrokeredMessage receiveMessage(ReceiveMessageOptions opts) {
+	public BrokeredMessage receiveMessage(ReceiveMessageOptions opts) throws ServiceException {
 		ReceiveQueueMessageResult resultQM;
-		try {
-			resultQM = serviceNode.getService().receiveQueueMessage(info.getPath(), opts);
-			return resultQM.getValue();
-		} catch (ServiceException e) {
-			warn("Error Receiving Message: " + e);
-		}
-		return null;
+		resultQM = serviceNode.getService().receiveQueueMessage(info.getPath(), opts);
+		return resultQM.getValue();
 	}
 	
 	@Override

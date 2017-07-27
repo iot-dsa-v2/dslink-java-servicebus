@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.iot.dsa.dslink.DSPermissionException;
 import org.iot.dsa.dslink.responder.InboundInvokeRequest;
 import org.iot.dsa.dslink.responder.OutboundInvokeResponse;
 import org.iot.dsa.node.DSElement;
@@ -113,7 +114,7 @@ public class MyDSActionNode extends MyDSNode implements ActionSpec {
 				}				
 			};
 		}
-		return null;
+		throw new DSPermissionException("");
 	}
 	
 	public static class InboundInvokeRequestHandle {
@@ -121,6 +122,10 @@ public class MyDSActionNode extends MyDSNode implements ActionSpec {
 
 		public InboundInvokeRequestHandle(InboundInvokeRequest req) {
 			this.req = req;
+		}
+		
+		public void close(Exception e) {
+			req.close(e);
 		}
 		
 		public void close() {
