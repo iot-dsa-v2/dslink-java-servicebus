@@ -1,22 +1,19 @@
 package org.iot.dsa.servicebus;
 
 import org.iot.dsa.dslink.DSRequestException;
-import org.iot.dsa.node.DSElement;
+import org.iot.dsa.node.DSBool;
+import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.ActionSpec.ResultType;
-import org.iot.dsa.security.DSPermission;
-import org.iot.dsa.servicebus.node.InvokeHandler;
-import org.iot.dsa.servicebus.node.MyDSActionNode;
-import org.iot.dsa.servicebus.node.MyDSNode;
-import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
+import org.iot.dsa.node.action.DSAction;
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveMessageOptions;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveSubscriptionMessageResult;
 import com.microsoft.windowsazure.services.servicebus.models.SubscriptionInfo;
 
-public class SubscriptionNode extends MyDSNode implements ReceiverNode {
+public class SubscriptionNode extends ReceiverNode {
 	
 	private SubscriptionInfo info;
 	private TopicNode topicNode;
@@ -35,29 +32,18 @@ public class SubscriptionNode extends MyDSNode implements ReceiverNode {
 		this.topicNode = topicNode;
 	}
 	
+
 	@Override
-	public void onStart() {
-		makeReadAction(true);
-		makeDeleteAction(true);
-	}
-	
-	private void makeReadAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new ReceiveHandler(this));
-		act.addParameter("Use_Peek-Lock", DSElement.make(true), null, null, null);
-		act.setResultType(ResultType.STREAM_TABLE);
-		addChild("Recieve_Messages", act, onStart);
-	}
-	
-	private void makeDeleteAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+	protected DSAction makeRemoveAction() {
+		DSAction act = new DSAction() {
 			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				handleDelete(parameters);
-				return new ActionResult() {};
+			public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
+				((SubscriptionNode) info.getParent()).handleDelete(invocation.getParameters());
+				return null;
 			}
-    	});
-		act.addParameter("Delete_From_Namespace", DSElement.make(false), null, null, null);
-		addChild("Remove", act, onStart);
+    	};
+		act.addParameter("Delete_From_Namespace", DSBool.FALSE, null);
+		return act;
 	}
 	
 	

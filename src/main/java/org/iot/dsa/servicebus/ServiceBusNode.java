@@ -4,16 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.iot.dsa.dslink.DSRequestException;
-import org.iot.dsa.node.DSElement;
+import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSNode;
+import org.iot.dsa.node.DSString;
+import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.security.DSPermission;
-import org.iot.dsa.servicebus.node.InvokeHandler;
-import org.iot.dsa.servicebus.node.MyDSActionNode;
-import org.iot.dsa.servicebus.node.MyDSNode;
-import org.iot.dsa.servicebus.node.MyDSValueNode;
-import org.iot.dsa.servicebus.node.MyValueType;
-import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
+import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.servicebus.Util.MyValueType;
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.ServiceBusConfiguration;
@@ -25,7 +23,7 @@ import com.microsoft.windowsazure.services.servicebus.models.QueueInfo;
 import com.microsoft.windowsazure.services.servicebus.models.TopicInfo;
 
 
-public class ServiceBusNode extends MyDSNode {
+public class ServiceBusNode extends RemovableNode {
 	
 	private String namespace;
 	private String keyName;
@@ -34,9 +32,18 @@ public class ServiceBusNode extends MyDSNode {
 	
 	private ServiceBusContract service;
 	
-	private MyDSValueNode statNode;
-	private MyDSNode queuesNode;
-	private MyDSNode topicsNode;
+	private DSInfo status = getInfo("Status");
+	private DSNode queuesNode;
+	private DSNode topicsNode;
+	
+	private DSInfo refresh = getInfo("Refresh");
+	private DSInfo createQueue = getInfo("Create_Queue");
+	private DSInfo createTopic = getInfo("Create_Topic");
+	
+	private DSInfo addQueue;
+	private DSInfo addTopic;
+	private DSInfo edit;
+	
 	
 	/**
 	 * Do not use
@@ -62,134 +69,100 @@ public class ServiceBusNode extends MyDSNode {
 	}
 	
 	@Override
-	public void onStart() {
-		statNode = new MyDSValueNode();
-		statNode.setValue(DSElement.make("Connecting"));
-		addChild("STATUS", statNode, true);
+    protected void declareDefaults() {
+		super.declareDefaults();
+		declareDefault("Queues", new DSNode());
+		declareDefault("Topics", new DSNode());
 		
-		queuesNode = new MyDSNode();
-		addChild("Queues", queuesNode, true);
-		
-		topicsNode = new MyDSNode();
-		addChild("Topics", topicsNode, true);
-		
-		makeRemoveAction(true);
-		makeRefreshAction(true);
-		makeCreateQueueAction(true);
-		makeCreateTopicAction(true);
-		
-		init(true);
+		declareDefault("Refresh", new DSAction());
+		declareDefault("Create_Queue", makeCreateAction());
+		declareDefault("Create_Topic", makeCreateAction());
 	}
 	
-	private void init(boolean onStart) {
+	@Override
+	public ActionResult onInvoke(DSInfo actionInfo, ActionInvocation invocation) {
+		if (actionInfo == null) {
+			return null;
+		}
+        if (actionInfo == this.refresh) {
+        	init();
+        } else if (actionInfo == this.createQueue) {
+        	createQueue(invocation.getParameters());
+        } else if (actionInfo == this.createTopic) {
+        	createTopic(invocation.getParameters());
+        } else if (actionInfo == this.addQueue) {
+        	addQueue(invocation.getParameters());
+        } else if (actionInfo == this.addTopic) {
+        	addTopic(invocation.getParameters());
+        } else if (actionInfo == this.edit) {
+        	edit(invocation.getParameters());
+        }
+        return null;
+    }
+	
+	@Override
+	public void onStable() {
+		status = add("STATUS", DSString.valueOf("Connecting"));
+		queuesNode = getNode("Queues");
+		topicsNode = getNode("Topics");
+		init();
+	}
+	
+	private void init() {
 		Configuration config = ServiceBusConfiguration.configureWithSASAuthentication(namespace, keyName, key, rootUri);
 		service = ServiceBusService.create(config);
 		
 		try {
 			ListQueuesResult qresult = service.listQueues();
-			makeAddQueueAction(qresult.getItems(), onStart);
+			put("Add_Queue", makeAddQueueAction(qresult.getItems()));
+			addQueue = getInfo("Add_Queue");
+			
 			ListTopicsResult tresult = service.listTopics();
-			makeAddTopicAction(tresult.getItems(), onStart);
-			statNode.setValue(DSElement.make("Connected"));
+			put("Add_Topic", makeAddTopicAction(tresult.getItems()));
+			addTopic = getInfo("Add_Topic");
+			
+			put(status, DSString.valueOf("Connected"));
 		} catch (ServiceException e) {
-			statNode.setValue(DSElement.make("Service Exception"));
+			put(status, DSString.valueOf("Service Exception"));
 		}
 		
-		
-		makeEditAction(onStart);
+		put("Edit", makeEditAction());
+		edit = getInfo("Edit");
 	}
 	
-	private void makeAddQueueAction(List<QueueInfo> queues, boolean onStart) {
+	private DSAction makeAddQueueAction(List<QueueInfo> queues) {
 		List<String> queueNames = new ArrayList<String>();
 		for (QueueInfo qInfo: queues) {
 			queueNames.add(qInfo.getPath());
 		}
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
-			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				addQueue(parameters);
-				return new ActionResult() {};
-			}
-		});
-		act.addParameter("Queue_Name", null, MyValueType.enumOf(queueNames), null, null);
-		addChild("Add_Queue", act, onStart);
+		DSAction act = new DSAction();
+		act.addParameter(Util.makeParameter("Queue_Name", null, MyValueType.enumOf(queueNames), null, null));
+		return act;
 	}
 
-	private void makeAddTopicAction(List<TopicInfo> topics, boolean onStart) {
+	private DSAction makeAddTopicAction(List<TopicInfo> topics) {
 		List<String> topicNames = new ArrayList<String>();
 		for (TopicInfo tInfo: topics) {
 			topicNames.add(tInfo.getPath());
 		}
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
-			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				addTopic(parameters);
-				return new ActionResult() {};
-			}
-		});
-		act.addParameter("Topic_Name", null, MyValueType.enumOf(topicNames), null, null);
-		addChild("Add_Topic", act, onStart);
+		DSAction act = new DSAction();
+		act.addParameter(Util.makeParameter("Topic_Name", null, MyValueType.enumOf(topicNames), null, null));
+		return act;
 	}
 	
-	private void makeRemoveAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
-			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				delete();
-				return new ActionResult() {};
-			}
-		});
-		addChild("Remove", act, onStart);
+	private DSAction makeEditAction() {
+		DSAction act = new DSAction();
+    	act.addParameter("Namespace", DSString.valueOf(namespace), null);
+    	act.addParameter("SAS_Key_Name", DSString.valueOf(keyName), null);
+    	act.addParameter("SAS_Key", DSString.valueOf(key), null);
+    	act.addParameter("Service_Bus_Root_Uri", DSString.valueOf(rootUri), null);
+    	return act;
 	}
 	
-	private void makeEditAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
-			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				edit(parameters);
-				return new ActionResult() {};
-			}
-    	});
-    	act.addParameter("Namespace", DSElement.make(namespace), null, null, null);
-    	act.addParameter("SAS_Key_Name", DSElement.make(keyName), null, null, null);
-    	act.addParameter("SAS_Key", DSElement.make(key), null, null, null);
-    	act.addParameter("Service_Bus_Root_Uri", DSElement.make(rootUri), null, null, null);
-    	addChild("Edit", act, onStart);
-	}
-	
-	private void makeRefreshAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
-			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				init(false);
-				return new ActionResult() {};
-			}
-    	});
-		addChild("Refresh", act, onStart);
-	}
-	
-	private void makeCreateQueueAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
-			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				createQueue(parameters);
-				return new ActionResult() {};
-			}
-    	});
-		act.addParameter("Name", null, MyValueType.STRING, null, null);
-		addChild("Create_Queue", act, onStart);
-	}
-
-	private void makeCreateTopicAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
-			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				createTopic(parameters);
-				return new ActionResult() {};
-			}
-    	});
-		act.addParameter("Name", null, MyValueType.STRING, null, null);
-		addChild("Create_Topic", act, onStart);
+	private DSAction makeCreateAction() {
+		DSAction act = new DSAction();
+		act.addParameter("Name", DSString.NULL, null);
+		return act;
 	}
 	
 	
@@ -198,19 +171,19 @@ public class ServiceBusNode extends MyDSNode {
     	keyName = parameters.getString("SAS_Key_Name");
     	key = parameters.getString("SAS_Key");
     	rootUri = parameters.getString("Service_Bus_Root_Uri");
-    	init(false);
+    	init();
 	}
 	
 	private void addQueue(DSMap parameters) {
 		String name = parameters.getString("Queue_Name");
 		QueueInfo qInfo = new QueueInfo(name);
-		queuesNode.addChild(qInfo.getPath(), new QueueNode(qInfo, this), false);
+		queuesNode.add(qInfo.getPath(), new QueueNode(qInfo, this));
 	}
 	
 	private void addTopic(DSMap parameters) {
 		String name = parameters.getString("Topic_Name");
 		TopicInfo tInfo = new TopicInfo(name);
-		topicsNode.addChild(tInfo.getPath(), new TopicNode(tInfo, this), false);
+		topicsNode.add(tInfo.getPath(), new TopicNode(tInfo, this));
 	}
 	
 	private void createQueue(DSMap parameters) {
@@ -218,7 +191,7 @@ public class ServiceBusNode extends MyDSNode {
 		QueueInfo queueInfo = new QueueInfo(name);
 		try {
 			service.createQueue(queueInfo);
-			queuesNode.addChild(queueInfo.getPath(), new QueueNode(queueInfo, this), false);
+			queuesNode.add(queueInfo.getPath(), new QueueNode(queueInfo, this));
 		} catch (ServiceException e) {
 			warn("Error Creating Queue: " + e);
 			throw new DSRequestException(e.getMessage());
@@ -230,20 +203,11 @@ public class ServiceBusNode extends MyDSNode {
 		TopicInfo topicInfo = new TopicInfo(name);
 		try {
 			service.createTopic(topicInfo);
-			topicsNode.addChild(topicInfo.getPath(), new TopicNode(topicInfo, this), false);
+			topicsNode.add(topicInfo.getPath(), new TopicNode(topicInfo, this));
 		} catch (ServiceException e) {
 			warn("Error Creating Topic: " + e);
 			throw new DSRequestException(e.getMessage());
 		}
-	}
-	
-	@Override
-	public void getMetaData(DSMap metaData) {
-		super.getMetaData(metaData);
-		metaData.put("Namespace", namespace);
-		metaData.put("SAS_Key_Name", keyName);
-		metaData.put("SAS_Key", key);
-		metaData.put("Service_Bus_Root_Uri", rootUri);
 	}
 
 }

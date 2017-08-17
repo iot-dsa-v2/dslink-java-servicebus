@@ -4,17 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.iot.dsa.dslink.DSRequestException;
-import org.iot.dsa.node.DSElement;
+import org.iot.dsa.node.DSBool;
+import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSMap.Entry;
+import org.iot.dsa.node.DSString;
+import org.iot.dsa.node.DSValueType;
+import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.security.DSPermission;
-import org.iot.dsa.servicebus.node.MyDSActionNode;
-import org.iot.dsa.servicebus.node.MyDSNode;
-import org.iot.dsa.servicebus.node.MyValueType;
-import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
-import org.iot.dsa.servicebus.node.InvokeHandler;
-
+import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.servicebus.Util.MyValueType;
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.ServiceBusContract;
 import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
@@ -22,7 +21,7 @@ import com.microsoft.windowsazure.services.servicebus.models.ListSubscriptionsRe
 import com.microsoft.windowsazure.services.servicebus.models.SubscriptionInfo;
 import com.microsoft.windowsazure.services.servicebus.models.TopicInfo;
 
-public class TopicNode extends MyDSNode {
+public class TopicNode extends RemovableNode {
 	
 	private TopicInfo info;
 	private ServiceBusNode serviceNode;
@@ -51,93 +50,97 @@ public class TopicNode extends MyDSNode {
 	}
 	
 	@Override
-	public void onStart() {
-		makeSendAction(true);
-		makeCreateSubscriptionAction(true);
-		makeDeleteAction(true);
-		makeRefreshAction(true);
-		
-		init(true);
+    protected void declareDefaults() {
+		super.declareDefaults();
+		declareDefault("Send_Message", makeSendAction());
+		declareDefault("Create_Subscription", makeCreateSubscriptionAction());
+		declareDefault("Refresh", makeRefreshAction());
 	}
 	
-	private void init(boolean onStart) {
+	@Override
+	public void onStable() {		
+		init();
+	}
+	
+	private void init() {
 		try {
 			ListSubscriptionsResult result = getService().listSubscriptions(info.getPath());
-			makeAddSubscriptionAction(result.getItems(), onStart);
+			put("Add_Subscription", makeAddSubscriptionAction(result.getItems()));
 		} catch (ServiceException e) {
 			warn("Error listing subscriptions: " + e);
 		}
 	}
 	
-	private void makeRefreshAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+	private DSAction makeRefreshAction() {
+		DSAction act = new DSAction() {
 			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				init(false);
-				return new ActionResult() {};
+			public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
+				((TopicNode) info.getParent()).init();
+				return null;
 			}
-    	});
-		addChild("Refresh", act, onStart);
+    	};
+		return act;
 	}
 	
-	private void makeAddSubscriptionAction(List<SubscriptionInfo> subscriptions, boolean onStart) {
+	private DSAction makeAddSubscriptionAction(List<SubscriptionInfo> subscriptions) {
 		List<String> subNames = new ArrayList<String>();
 		for (SubscriptionInfo sInfo: subscriptions) {
 			subNames.add(sInfo.getName());
 		}
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+		DSAction act = new DSAction() {
 			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				addSubscription(parameters);
-				return new ActionResult() {};
+			public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
+				((TopicNode) info.getParent()).addSubscription(invocation.getParameters());
+				return null;
 			}
-		});
-		act.addParameter("Subscription_Name", null, MyValueType.enumOf(subNames), null, null);
-		addChild("Add_Subscription", act, onStart);	
+		};
+		act.addParameter(Util.makeParameter("Subscription_Name", null, MyValueType.enumOf(subNames), null, null));
+		return act;
 	}
 	
-	private void makeSendAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+	private DSAction makeSendAction() {
+		DSAction act = new DSAction() {
 			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				handleSend(parameters);
-				return new ActionResult() {};
+			public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
+				((TopicNode) info.getParent()).handleSend(invocation.getParameters());
+				return null;
 			}
-		});
-		act.addParameter("Message", null, MyValueType.STRING, null, null);
-		act.addParameter("Properties", new DSMap(), MyValueType.MAP, null, null);
-		addChild("Send_Message", act, onStart);
+		};
+		act.addParameter("Message", DSString.NULL, null);
+		act.addParameter("Properties", DSString.valueOf("{}"), null).setType(DSValueType.MAP);
+		return act;
 	}
 	
-	private void makeCreateSubscriptionAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+	private DSAction makeCreateSubscriptionAction() {
+		DSAction act = new DSAction() {
 			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				createSubscription(parameters);
-				return new ActionResult() {};
+			public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
+				((TopicNode) info.getParent()).createSubscription(invocation.getParameters());
+				return null;
 			}
-    	});
-		act.addParameter("Name", null, MyValueType.STRING, null, null);
-		addChild("Create_Subscription", act, onStart);
+    	};
+		act.addParameter("Name", DSString.NULL, null);
+		return act;
 	}
 	
-	private void makeDeleteAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+	@Override
+	protected DSAction makeRemoveAction() {
+		DSAction act = new DSAction() {
 			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				handleDelete(parameters);
-				return new ActionResult() {};
+			public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
+				((TopicNode) info.getParent()).handleDelete(invocation.getParameters());
+				return null;
 			}
-    	});
-		act.addParameter("Delete_From_Namespace", DSElement.make(false), null, null, null);
-		addChild("Remove", act, onStart);
+    	};
+		act.addParameter("Delete_From_Namespace", DSBool.FALSE, null);
+		return act;
 	}
 	
 	
 	private void addSubscription(DSMap parameters) {
 		String name = parameters.getString("Subscription_Name");
 		SubscriptionInfo sInfo = new SubscriptionInfo(name);
-		addChild(sInfo.getName(), new SubscriptionNode(sInfo, this), false);
+		add(sInfo.getName(), new SubscriptionNode(sInfo, this));
 	}
 	
 	private void handleSend(DSMap parameters) {
@@ -161,7 +164,7 @@ public class TopicNode extends MyDSNode {
 		SubscriptionInfo sinfo = new SubscriptionInfo(name);
 		try {
 			getService().createSubscription(info.getPath(), sinfo);
-			addChild(sinfo.getName(), new SubscriptionNode(sinfo, this), false);
+			add(sinfo.getName(), new SubscriptionNode(sinfo, this));
 		} catch (ServiceException e) {
 			warn("Error Creating Subscription: " + e);
 			throw new DSRequestException(e.getMessage());

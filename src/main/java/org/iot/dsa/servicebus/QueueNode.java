@@ -1,25 +1,22 @@
 package org.iot.dsa.servicebus;
 
 import org.iot.dsa.dslink.DSRequestException;
-import org.iot.dsa.node.DSElement;
+import org.iot.dsa.node.DSBool;
+import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSMap.Entry;
+import org.iot.dsa.node.DSString;
+import org.iot.dsa.node.DSValueType;
+import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.ActionSpec.ResultType;
-import org.iot.dsa.security.DSPermission;
-import org.iot.dsa.servicebus.node.MyDSActionNode;
-import org.iot.dsa.servicebus.node.MyDSNode;
-import org.iot.dsa.servicebus.node.MyValueType;
-import org.iot.dsa.servicebus.node.MyDSActionNode.InboundInvokeRequestHandle;
-import org.iot.dsa.servicebus.node.InvokeHandler;
-
+import org.iot.dsa.node.action.DSAction;
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
 import com.microsoft.windowsazure.services.servicebus.models.QueueInfo;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveMessageOptions;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveQueueMessageResult;
 
-public class QueueNode extends MyDSNode implements ReceiverNode {
+public class QueueNode extends ReceiverNode {
 	
 	private QueueInfo info;
 	private ServiceBusNode serviceNode;
@@ -40,42 +37,35 @@ public class QueueNode extends MyDSNode implements ReceiverNode {
 	}
 	
 	@Override
-	public void onStart() {
-		makeSendAction(true);
-		makeReadAction(true);
-		makeDeleteAction(true);
+	public void declareDefaults() {
+		super.declareDefaults();
+		declareDefault("Send_Message", makeSendAction());
 	}
 	
-	private void makeSendAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+	private DSAction makeSendAction() {
+		DSAction act = new DSAction() {
 			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				handleSend(parameters);
-				return new ActionResult() {};
+			public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
+				((QueueNode) info.getParent()).handleSend(invocation.getParameters());
+				return null;
 			}
-		});
-		act.addParameter("Message", null, MyValueType.STRING, null, null);
-		act.addParameter("Properties", new DSMap(), null, null, null);
-		addChild("Send_Message", act, onStart);
+		};
+		act.addParameter("Message", DSString.NULL, null);
+		act.addParameter("Properties", DSString.valueOf("{}"), null).setType(DSValueType.MAP);
+		return act;
 	}
 	
-	private void makeReadAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new ReceiveHandler(this));
-		act.addParameter("Use_Peek-Lock", DSElement.make(true), null, null, null);
-		act.setResultType(ResultType.STREAM_TABLE);
-		addChild("Recieve_Messages", act, onStart);
-	}
-	
-	private void makeDeleteAction(boolean onStart) {
-		MyDSActionNode act = new MyDSActionNode(DSPermission.READ, new InvokeHandler() {
+	@Override
+	protected DSAction makeRemoveAction() {
+		DSAction act = new DSAction() {
 			@Override
-			public ActionResult handle(DSMap parameters, InboundInvokeRequestHandle reqHandle) {
-				handleDelete(parameters);
-				return new ActionResult() {};
+			public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
+				((QueueNode) info.getParent()).handleDelete(invocation.getParameters());
+				return null;
 			}
-    	});
-		act.addParameter("Delete_From_Namespace", DSElement.make(false), null, null, null);
-		addChild("Remove", act, onStart);
+    	};
+		act.addParameter("Delete_From_Namespace", DSBool.FALSE, null);
+		return act;
 	}
 	
 	
@@ -122,10 +112,4 @@ public class QueueNode extends MyDSNode implements ReceiverNode {
 			warn("Error Deleting Message: " + e);
 		}
 	}
-	
-	@Override
-	public void getMetaData(DSMap metaData) {
-		super.getMetaData(metaData);
-	}
-
 }

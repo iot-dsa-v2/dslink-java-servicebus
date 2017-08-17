@@ -4,7 +4,7 @@ apply plugin: 'application'
 mainClassName = 'org.iot.dsa.servicebus.Main'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-version = '0.0.4-SNAPSHOT'
+version = '0.0.5-SNAPSHOT'
 
 repositories {
     jcenter()
@@ -17,8 +17,8 @@ repositories {
 dependencies {
 	compile 'org.apache.commons:commons-lang3:3.6'
     compile 'org.slf4j:slf4j-api:1.7.21'
-	compile ':dslink-core:+'
-	compile ':dslink-websocket-tyrus:+'
+	compile 'org.iot.dsa:dslink-core:+'
+    compile 'org.iot.dsa:dslink-websocket-standalone:+'
 	compile 'org.glassfish.tyrus.bundles:tyrus-standalone-client:1.13'
 	compile 'com.microsoft.azure:azure-servicebus:0.9.7'
 
