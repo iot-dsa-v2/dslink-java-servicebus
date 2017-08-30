@@ -4,6 +4,7 @@ import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSBool;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSNode;
 import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
@@ -23,13 +24,25 @@ public class SubscriptionNode extends ReceiverNode {
 	 */
 	public SubscriptionNode() {
 		super();
-		this.info = new SubscriptionInfo();
 	}
 
 	public SubscriptionNode(SubscriptionInfo info, TopicNode topicNode) {
 		super();
 		this.info = info;
 		this.topicNode = topicNode;
+	}
+	
+	@Override
+	protected void onStable() {
+		if (topicNode == null) {
+			DSNode n = getParent();
+			if (n instanceof TopicNode) {
+				topicNode = ((TopicNode) n);
+			}
+		}
+		if (info == null) {
+			info = new SubscriptionInfo(getName());
+		}
 	}
 	
 

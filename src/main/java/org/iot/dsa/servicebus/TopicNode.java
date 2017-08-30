@@ -7,6 +7,7 @@ import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSBool;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSNode;
 import org.iot.dsa.node.DSMap.Entry;
 import org.iot.dsa.node.DSString;
 import org.iot.dsa.node.DSValueType;
@@ -31,8 +32,6 @@ public class TopicNode extends RemovableNode {
 	 */
 	public TopicNode() {
 		super();
-		this.info = new TopicInfo();
-//		this.serviceNode = (ServiceBusNode) getParent().getParent();
 	}
 	
 	public TopicNode(TopicInfo info, ServiceBusNode serviceNode) {
@@ -58,14 +57,26 @@ public class TopicNode extends RemovableNode {
 	}
 	
 	@Override
-	public void onStable() {		
-		init();
+	protected void onStable() {
+		if (serviceNode == null) {
+			DSNode n = getParent();
+			n = n.getParent();
+			if (n instanceof ServiceBusNode) {
+				serviceNode = ((ServiceBusNode) n);
+			}
+		}
+		if (info == null) {
+			info = new TopicInfo(getName());
+		}
+		if (getService() != null) {
+			init();
+		}
 	}
 	
-	private void init() {
+	void init() {
 		try {
 			ListSubscriptionsResult result = getService().listSubscriptions(info.getPath());
-			put("Add_Subscription", makeAddSubscriptionAction(result.getItems()));
+			put("Add_Subscription", makeAddSubscriptionAction(result.getItems())).setTransient(true);
 		} catch (ServiceException e) {
 			warn("Error listing subscriptions: " + e);
 		}

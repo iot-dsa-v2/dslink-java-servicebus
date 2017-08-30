@@ -4,6 +4,7 @@ import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSBool;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSNode;
 import org.iot.dsa.node.DSMap.Entry;
 import org.iot.dsa.node.DSString;
 import org.iot.dsa.node.DSValueType;
@@ -25,9 +26,6 @@ public class QueueNode extends ReceiverNode {
 	 * Do not use
 	 */
 	public QueueNode() {
-		super();
-		this.info = new QueueInfo();
-//		this.serviceNode = (ServiceBusNode) getParent().getParent();
 	}
 
 	public QueueNode(QueueInfo info, ServiceBusNode serviceNode) {
@@ -37,9 +35,23 @@ public class QueueNode extends ReceiverNode {
 	}
 	
 	@Override
-	public void declareDefaults() {
+	protected void declareDefaults() {
 		super.declareDefaults();
 		declareDefault("Send_Message", makeSendAction());
+	}
+	
+	@Override
+	protected void onStable() {
+		if (serviceNode == null) {
+			DSNode n = getParent();
+			n = n.getParent();
+			if (n instanceof ServiceBusNode) {
+				serviceNode = ((ServiceBusNode) n);
+			}
+		}
+		if (info == null) {
+			info = new QueueInfo(getName());
+		}
 	}
 	
 	private DSAction makeSendAction() {

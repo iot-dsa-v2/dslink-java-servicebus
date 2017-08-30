@@ -39,7 +39,7 @@ public abstract class ReceiverNode extends RemovableNode {
 	};
 	
 	@Override
-	public void declareDefaults() {
+	protected void declareDefaults() {
 		super.declareDefaults();
 		declareDefault("Recieve_Messages", makeReadAction());
 	}

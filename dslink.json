@@ -1,6 +1,6 @@
 {
   "name": "dslink-java-servicebus",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Azure Service Bus DSLink",
   "license": "ISC",
   "author": {

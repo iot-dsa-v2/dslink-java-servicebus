@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.iot.dsa.dslink.DSRequestException;
+import org.iot.dsa.node.DSIObject;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSNode;
@@ -50,10 +51,6 @@ public class ServiceBusNode extends RemovableNode {
 	 */
 	public ServiceBusNode() {
 		super();
-		this.namespace = "";
-		this.keyName = "RootManageSharedAccessKey";
-		this.key = "";
-		this.rootUri = ".servicebus.windows.net";
 	}
 	
 	public ServiceBusNode(String namespace, String keyName, String key, String rootUri) {
@@ -101,33 +98,61 @@ public class ServiceBusNode extends RemovableNode {
     }
 	
 	@Override
-	public void onStable() {
-		status = add("STATUS", DSString.valueOf("Connecting"));
+	protected void onStarted() {
+		if (namespace == null) {
+			DSIObject ns = get("Namespace");
+			namespace = ns instanceof DSString ? ns.toString() : "";
+		}
+		if (keyName == null) {
+			DSIObject kn = get("SAS_Key_Name");
+			keyName = kn instanceof DSString ? kn.toString() : "RootManageSharedAccessKey";
+		}
+		if (key == null) {
+			DSIObject k = get("SAS_Key");
+			key = k instanceof DSString ? k.toString() : "";
+		}
+		if (rootUri == null) {
+			DSIObject ru = get("Service_Bus_Root_Uri");
+			rootUri = ru instanceof DSString ? ru.toString() : ".servicebus.windows.net";
+		}
+	}
+	
+	@Override
+	protected void onStable() {
+		status = add("STATUS", DSString.valueOf("Connecting")).setTransient(true);
 		queuesNode = getNode("Queues");
 		topicsNode = getNode("Topics");
 		init();
 	}
 	
 	private void init() {
+		put("Namespace", DSString.valueOf(namespace)).setReadOnly(true);
+		put("SAS_Key_Name", DSString.valueOf(keyName)).setReadOnly(true);
+		put("SAS_Key", DSString.valueOf(key)).setReadOnly(true);
+		put("Service_Bus_Root_Uri", DSString.valueOf(rootUri)).setReadOnly(true);
 		Configuration config = ServiceBusConfiguration.configureWithSASAuthentication(namespace, keyName, key, rootUri);
 		service = ServiceBusService.create(config);
 		
 		try {
 			ListQueuesResult qresult = service.listQueues();
-			put("Add_Queue", makeAddQueueAction(qresult.getItems()));
-			addQueue = getInfo("Add_Queue");
+			addQueue = put("Add_Queue", makeAddQueueAction(qresult.getItems())).setTransient(true);
 			
 			ListTopicsResult tresult = service.listTopics();
-			put("Add_Topic", makeAddTopicAction(tresult.getItems()));
-			addTopic = getInfo("Add_Topic");
+			addTopic = put("Add_Topic", makeAddTopicAction(tresult.getItems())).setTransient(true);
 			
 			put(status, DSString.valueOf("Connected"));
 		} catch (ServiceException e) {
 			put(status, DSString.valueOf("Service Exception"));
 		}
 		
-		put("Edit", makeEditAction());
-		edit = getInfo("Edit");
+		edit = put("Edit", makeEditAction()).setTransient(true);
+		
+		for (int i = 0; i < topicsNode.childCount(); i++) {
+			DSIObject n = topicsNode.get(i);
+			if (n instanceof TopicNode) {
+				((TopicNode) n).init();
+			}
+		}
 	}
 	
 	private DSAction makeAddQueueAction(List<QueueInfo> queues) {
