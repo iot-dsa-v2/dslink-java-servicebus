@@ -55,7 +55,7 @@ public class SubscriptionNode extends ReceiverNode {
 				return null;
 			}
     	};
-		act.addParameter("Delete_From_Namespace", DSBool.FALSE, null);
+		act.addDefaultParameter("Delete_From_Namespace", DSBool.FALSE, null);
 		return act;
 	}
 	

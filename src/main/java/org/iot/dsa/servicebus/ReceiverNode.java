@@ -19,7 +19,6 @@ import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.ActionResultSpec;
 import org.iot.dsa.node.action.ActionSpec;
 import org.iot.dsa.node.action.ActionTable;
 import org.iot.dsa.node.action.DSAction;
@@ -65,20 +64,21 @@ public abstract class ReceiverNode extends RemovableNode {
 		final Timer t = DSRuntime.run(runnable, System.currentTimeMillis() + 1000, 1000);
 		
 		return new ActionTable() {
+			private List<DSMap> cols;
+			
 			@Override
 			public Iterator<DSList> getRows() {
 				return new ArrayList<DSList>().iterator();
 			}
 			@Override
-			public Iterator<ActionResultSpec> getColumns() {
-				ActionResultSpec c1 = new Util.MyColumn("ID", DSValueType.STRING);
-				ActionResultSpec c2 = new Util.MyColumn("Timestamp", DSValueType.STRING);
-				ActionResultSpec c3 = new Util.MyColumn("Body", DSValueType.STRING);	
-				List<ActionResultSpec> colList = new ArrayList<ActionResultSpec>();
-				colList.add(c1);
-				colList.add(c2);
-				colList.add(c3);
-				return colList.iterator();
+			public Iterator<DSMap> getColumns() {
+				if (cols == null) {
+					cols = new ArrayList<DSMap>();
+					cols.add(Util.makeColumn("ID", DSValueType.STRING));
+					cols.add(Util.makeColumn("Timestamp", DSValueType.STRING));
+					cols.add(Util.makeColumn("Body", DSValueType.STRING));
+				}
+				return cols.iterator();
 			}
 			@Override
 			public ActionSpec getAction() {

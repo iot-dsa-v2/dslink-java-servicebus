@@ -147,8 +147,8 @@ public class ServiceBusNode extends RemovableNode {
 		
 		edit = put("Edit", makeEditAction()).setTransient(true);
 		
-		for (int i = 0; i < topicsNode.childCount(); i++) {
-			DSIObject n = topicsNode.get(i);
+		for (DSInfo info: topicsNode) {
+			DSIObject n = info.getObject();
 			if (n instanceof TopicNode) {
 				((TopicNode) n).init();
 			}
@@ -177,10 +177,10 @@ public class ServiceBusNode extends RemovableNode {
 	
 	private DSAction makeEditAction() {
 		DSAction act = new DSAction();
-    	act.addParameter("Namespace", DSString.valueOf(namespace), null);
-    	act.addParameter("SAS_Key_Name", DSString.valueOf(keyName), null);
-    	act.addParameter("SAS_Key", DSString.valueOf(key), null);
-    	act.addParameter("Service_Bus_Root_Uri", DSString.valueOf(rootUri), null);
+    	act.addDefaultParameter("Namespace", DSString.valueOf(namespace), null);
+    	act.addDefaultParameter("SAS_Key_Name", DSString.valueOf(keyName), null);
+    	act.addDefaultParameter("SAS_Key", DSString.valueOf(key), null);
+    	act.addDefaultParameter("Service_Bus_Root_Uri", DSString.valueOf(rootUri), null);
     	return act;
 	}
 	

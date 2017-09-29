@@ -1,7 +1,5 @@
 package org.iot.dsa.servicebus;
 
-import org.iot.dsa.dslink.DSLink;
-import org.iot.dsa.dslink.DSLinkConfig;
 import org.iot.dsa.dslink.DSRootNode;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
@@ -17,11 +15,11 @@ public class Main extends DSRootNode {
 	@Override
     protected void declareDefaults() {
 		DSAction act = new DSAction();
-    	act.addParameter("Name", DSString.valueOf("danielbus"), null);
-    	act.addParameter("Namespace", DSString.valueOf("danielbus"), null);
-    	act.addParameter("SAS_Key_Name", DSString.valueOf("RootManageSharedAccessKey"), null);
-    	act.addParameter("SAS_Key", DSString.valueOf("P+jvN1egFsUXuadbdPENAeIF5p2MglAbFDZLUVp8EGw="), null);
-    	act.addParameter("Service_Bus_Root_Uri", DSString.valueOf(".servicebus.windows.net"), null);
+    	act.addDefaultParameter("Name", DSString.valueOf("danielbus"), null);
+    	act.addDefaultParameter("Namespace", DSString.valueOf("danielbus"), null);
+    	act.addDefaultParameter("SAS_Key_Name", DSString.valueOf("RootManageSharedAccessKey"), null);
+    	act.addDefaultParameter("SAS_Key", DSString.valueOf("P+jvN1egFsUXuadbdPENAeIF5p2MglAbFDZLUVp8EGw="), null);
+    	act.addDefaultParameter("Service_Bus_Root_Uri", DSString.valueOf(".servicebus.windows.net"), null);
     	declareDefault("Add_Service_Bus", act);
 	}
 	
@@ -42,11 +40,4 @@ public class Main extends DSRootNode {
     	ServiceBusNode sb = new ServiceBusNode(namespace, keyName, key, rootUri);
     	add(name, sb);
     }
-    
-    public static void main(String[] args) throws Exception {
-		DSLinkConfig cfg = new DSLinkConfig(args);
-        DSLink link = new DSLink(cfg);
-        link.run();
-	}
-
 }

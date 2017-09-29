@@ -7,7 +7,6 @@ import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSNode;
 import org.iot.dsa.node.DSMap.Entry;
 import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
@@ -63,7 +62,7 @@ public class QueueNode extends ReceiverNode {
 			}
 		};
 		act.addParameter("Message", DSString.NULL, null);
-		act.addParameter("Properties", DSString.valueOf("{}"), null).setType(DSValueType.MAP);
+		act.addDefaultParameter("Properties", new DSMap(), null);
 		return act;
 	}
 	
@@ -76,7 +75,7 @@ public class QueueNode extends ReceiverNode {
 				return null;
 			}
     	};
-		act.addParameter("Delete_From_Namespace", DSBool.FALSE, null);
+		act.addDefaultParameter("Delete_From_Namespace", DSBool.FALSE, null);
 		return act;
 	}
 	

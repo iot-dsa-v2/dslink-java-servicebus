@@ -6,11 +6,15 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.iot.dsa.node.DSElement;
 import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSMetadata;
 import org.iot.dsa.node.DSString;
 import org.iot.dsa.node.DSValueType;
-import org.iot.dsa.node.action.ActionResultSpec;
 
 public class Util {
+	
+	public static DSMap makeColumn(String name, DSValueType type) {
+		return new DSMetadata().setName(name).setType(type).getMap();
+	}
 	
 	public static DSMap makeParameter(String name, DSElement def, MyValueType type, String description, String placeholder) {
 		DSMap param = new DSMap();
@@ -33,31 +37,6 @@ public class Util {
 		return param;
 	}
 	
-	public static class MyColumn implements ActionResultSpec {
-		
-		String name;
-		DSValueType type;
-		
-		public MyColumn(String name, DSValueType type) {
-			this.name = name;
-			this.type = type;
-		}
-
-		@Override
-		public DSMap getMetadata() {
-			return null;
-		}
-
-		@Override
-		public String getName() {
-			return name;
-		}
-
-		@Override
-		public DSValueType getType() {
-			return type;
-		}
-	}
 	
 	public static class MyValueType {
 		
@@ -73,7 +52,6 @@ public class Util {
 			this.states = states;
 		}
 
-		public static final MyValueType ANY = new MyValueType(DSValueType.ANY);
 		public static final MyValueType BINARY = new MyValueType(DSValueType.BINARY);
 		public static final MyValueType BOOL = new MyValueType(DSValueType.BOOL);
 		public static final MyValueType ENUM = new MyValueType(DSValueType.ENUM);
