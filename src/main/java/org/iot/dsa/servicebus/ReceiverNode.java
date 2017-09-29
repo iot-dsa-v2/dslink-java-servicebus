@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.iot.dsa.DSRuntime;
 import org.iot.dsa.DSRuntime.Timer;
@@ -77,6 +78,7 @@ public abstract class ReceiverNode extends RemovableNode {
 					cols.add(Util.makeColumn("ID", DSValueType.STRING));
 					cols.add(Util.makeColumn("Timestamp", DSValueType.STRING));
 					cols.add(Util.makeColumn("Body", DSValueType.STRING));
+					cols.add(Util.makeColumn("Properties", DSValueType.MAP));
 				}
 				return cols.iterator();
 			}
@@ -123,7 +125,11 @@ public abstract class ReceiverNode extends RemovableNode {
 							warn(e);
 						}
 						String date = dateFormat.format(message.getDate());
-						invocation.send(new DSList().add(id).add(date).add(s.toString().trim()));
+						DSMap properties = new DSMap();
+						for(Entry<String, Object> entry: message.getProperties().entrySet()) {
+							Util.putInMap(properties, entry.getKey(), entry.getValue());
+						}
+						invocation.send(new DSList().add(id).add(date).add(s.toString().trim()).add(properties));
 						if (opts.isPeekLock()) {
 							deleteMessage(message);
 						}
