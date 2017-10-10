@@ -36,7 +36,7 @@ public class QueueNode extends ReceiverNode {
 	@Override
 	protected void declareDefaults() {
 		super.declareDefaults();
-		declareDefault("Send_Message", makeSendAction());
+		declareDefault("Send Message", makeSendAction());
 	}
 	
 	@Override
@@ -75,7 +75,7 @@ public class QueueNode extends ReceiverNode {
 				return null;
 			}
     	};
-		act.addDefaultParameter("Delete_From_Namespace", DSBool.FALSE, null);
+		act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
 		return act;
 	}
 	
@@ -97,7 +97,7 @@ public class QueueNode extends ReceiverNode {
 	}
 	
 	private void handleDelete(DSMap parameters) {
-		if (parameters.get("Delete_From_Namespace", false)) {
+		if (parameters.get("Delete From Namespace", false)) {
 			try {
 				serviceNode.getService().deleteQueue(info.getPath());;
 			} catch (ServiceException e) {

@@ -50,8 +50,8 @@ public class TopicNode extends RemovableNode {
 	@Override
     protected void declareDefaults() {
 		super.declareDefaults();
-		declareDefault("Send_Message", makeSendAction());
-		declareDefault("Create_Subscription", makeCreateSubscriptionAction());
+		declareDefault("Send Message", makeSendAction());
+		declareDefault("Create Subscription", makeCreateSubscriptionAction());
 		declareDefault("Refresh", makeRefreshAction());
 	}
 	
@@ -75,7 +75,7 @@ public class TopicNode extends RemovableNode {
 	void init() {
 		try {
 			ListSubscriptionsResult result = getService().listSubscriptions(info.getPath());
-			put("Add_Subscription", makeAddSubscriptionAction(result.getItems())).setTransient(true);
+			put("Add Subscription", makeAddSubscriptionAction(result.getItems())).setTransient(true);
 		} catch (ServiceException e) {
 			warn("Error listing subscriptions: " + e);
 		}
@@ -104,7 +104,7 @@ public class TopicNode extends RemovableNode {
 				return null;
 			}
 		};
-		act.addParameter(Util.makeParameter("Subscription_Name", null, MyValueType.enumOf(subNames), null, null));
+		act.addParameter(Util.makeParameter("Subscription Name", null, MyValueType.enumOf(subNames), null, null));
 		return act;
 	}
 	
@@ -142,13 +142,13 @@ public class TopicNode extends RemovableNode {
 				return null;
 			}
     	};
-		act.addDefaultParameter("Delete_From_Namespace", DSBool.FALSE, null);
+		act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
 		return act;
 	}
 	
 	
 	private void addSubscription(DSMap parameters) {
-		String name = parameters.getString("Subscription_Name");
+		String name = parameters.getString("Subscription Name");
 		SubscriptionInfo sInfo = new SubscriptionInfo(name);
 		add(sInfo.getName(), new SubscriptionNode(sInfo, this));
 	}
@@ -182,7 +182,7 @@ public class TopicNode extends RemovableNode {
 	}
 	
 	private void handleDelete(DSMap parameters) {
-		if (parameters.get("Delete_From_Namespace", false)) {
+		if (parameters.get("Delete From Namespace", false)) {
 			try {
 				getService().deleteTopic(info.getPath());
 			} catch (ServiceException e) {

@@ -55,13 +55,13 @@ public class SubscriptionNode extends ReceiverNode {
 				return null;
 			}
     	};
-		act.addDefaultParameter("Delete_From_Namespace", DSBool.FALSE, null);
+		act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
 		return act;
 	}
 	
 	
 	private void handleDelete(DSMap parameters) {
-		if (parameters.get("Delete_From_Namespace", false)) {
+		if (parameters.get("Delete From Namespace", false)) {
 			try {
 				topicNode.getService().deleteSubscription(topicNode.getTopicName(), info.getName());
 			} catch (ServiceException e) {

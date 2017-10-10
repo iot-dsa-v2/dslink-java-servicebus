@@ -38,8 +38,8 @@ public class ServiceBusNode extends RemovableNode {
 	private DSNode topicsNode;
 	
 	private DSInfo refresh = getInfo("Refresh");
-	private DSInfo createQueue = getInfo("Create_Queue");
-	private DSInfo createTopic = getInfo("Create_Topic");
+	private DSInfo createQueue = getInfo("Create Queue");
+	private DSInfo createTopic = getInfo("Create Topic");
 	
 	private DSInfo addQueue;
 	private DSInfo addTopic;
@@ -72,8 +72,8 @@ public class ServiceBusNode extends RemovableNode {
 		declareDefault("Topics", new DSNode());
 		
 		declareDefault("Refresh", new DSAction());
-		declareDefault("Create_Queue", makeCreateAction());
-		declareDefault("Create_Topic", makeCreateAction());
+		declareDefault("Create Queue", makeCreateAction());
+		declareDefault("Create Topic", makeCreateAction());
 	}
 	
 	@Override
@@ -104,15 +104,15 @@ public class ServiceBusNode extends RemovableNode {
 			namespace = ns instanceof DSString ? ns.toString() : "";
 		}
 		if (keyName == null) {
-			DSIObject kn = get("SAS_Key_Name");
+			DSIObject kn = get("SAS Key Name");
 			keyName = kn instanceof DSString ? kn.toString() : "RootManageSharedAccessKey";
 		}
 		if (key == null) {
-			DSIObject k = get("SAS_Key");
+			DSIObject k = get("SAS Key");
 			key = k instanceof DSString ? k.toString() : "";
 		}
 		if (rootUri == null) {
-			DSIObject ru = get("Service_Bus_Root_Uri");
+			DSIObject ru = get("Service Bus Root Uri");
 			rootUri = ru instanceof DSString ? ru.toString() : ".servicebus.windows.net";
 		}
 	}
@@ -127,18 +127,18 @@ public class ServiceBusNode extends RemovableNode {
 	
 	private void init() {
 		put("Namespace", DSString.valueOf(namespace)).setReadOnly(true);
-		put("SAS_Key_Name", DSString.valueOf(keyName)).setReadOnly(true);
-		put("SAS_Key", DSString.valueOf(key)).setReadOnly(true);
-		put("Service_Bus_Root_Uri", DSString.valueOf(rootUri)).setReadOnly(true);
+		put("SAS Key Name", DSString.valueOf(keyName)).setReadOnly(true);
+		put("SAS Key", DSString.valueOf(key)).setReadOnly(true);
+		put("Service Bus Root Uri", DSString.valueOf(rootUri)).setReadOnly(true);
 		Configuration config = ServiceBusConfiguration.configureWithSASAuthentication(namespace, keyName, key, rootUri);
 		service = ServiceBusService.create(config);
 		
 		try {
 			ListQueuesResult qresult = service.listQueues();
-			addQueue = put("Add_Queue", makeAddQueueAction(qresult.getItems())).setTransient(true);
+			addQueue = put("Add Queue", makeAddQueueAction(qresult.getItems())).setTransient(true);
 			
 			ListTopicsResult tresult = service.listTopics();
-			addTopic = put("Add_Topic", makeAddTopicAction(tresult.getItems())).setTransient(true);
+			addTopic = put("Add Topic", makeAddTopicAction(tresult.getItems())).setTransient(true);
 			
 			put(status, DSString.valueOf("Connected"));
 		} catch (ServiceException e) {
@@ -161,7 +161,7 @@ public class ServiceBusNode extends RemovableNode {
 			queueNames.add(qInfo.getPath());
 		}
 		DSAction act = new DSAction();
-		act.addParameter(Util.makeParameter("Queue_Name", null, MyValueType.enumOf(queueNames), null, null));
+		act.addParameter(Util.makeParameter("Queue Name", null, MyValueType.enumOf(queueNames), null, null));
 		return act;
 	}
 
@@ -171,16 +171,16 @@ public class ServiceBusNode extends RemovableNode {
 			topicNames.add(tInfo.getPath());
 		}
 		DSAction act = new DSAction();
-		act.addParameter(Util.makeParameter("Topic_Name", null, MyValueType.enumOf(topicNames), null, null));
+		act.addParameter(Util.makeParameter("Topic Name", null, MyValueType.enumOf(topicNames), null, null));
 		return act;
 	}
 	
 	private DSAction makeEditAction() {
 		DSAction act = new DSAction();
     	act.addDefaultParameter("Namespace", DSString.valueOf(namespace), null);
-    	act.addDefaultParameter("SAS_Key_Name", DSString.valueOf(keyName), null);
-    	act.addDefaultParameter("SAS_Key", DSString.valueOf(key), null);
-    	act.addDefaultParameter("Service_Bus_Root_Uri", DSString.valueOf(rootUri), null);
+    	act.addDefaultParameter("SAS Key Name", DSString.valueOf(keyName), null);
+    	act.addDefaultParameter("SAS Key", DSString.valueOf(key), null);
+    	act.addDefaultParameter("Service Bus Root Uri", DSString.valueOf(rootUri), null);
     	return act;
 	}
 	
@@ -193,20 +193,20 @@ public class ServiceBusNode extends RemovableNode {
 	
 	private void edit(DSMap parameters) {
 		namespace = parameters.getString("Namespace");
-    	keyName = parameters.getString("SAS_Key_Name");
-    	key = parameters.getString("SAS_Key");
-    	rootUri = parameters.getString("Service_Bus_Root_Uri");
+    	keyName = parameters.getString("SAS Key Name");
+    	key = parameters.getString("SAS Key");
+    	rootUri = parameters.getString("Service Bus Root Uri");
     	init();
 	}
 	
 	private void addQueue(DSMap parameters) {
-		String name = parameters.getString("Queue_Name");
+		String name = parameters.getString("Queue Name");
 		QueueInfo qInfo = new QueueInfo(name);
 		queuesNode.add(qInfo.getPath(), new QueueNode(qInfo, this));
 	}
 	
 	private void addTopic(DSMap parameters) {
-		String name = parameters.getString("Topic_Name");
+		String name = parameters.getString("Topic Name");
 		TopicInfo tInfo = new TopicInfo(name);
 		topicsNode.add(tInfo.getPath(), new TopicNode(tInfo, this));
 	}

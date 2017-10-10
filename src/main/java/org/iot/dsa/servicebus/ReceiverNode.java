@@ -41,7 +41,7 @@ public abstract class ReceiverNode extends RemovableNode {
 	@Override
 	protected void declareDefaults() {
 		super.declareDefaults();
-		declareDefault("Recieve_Messages", makeReadAction());
+		declareDefault("Recieve Messages", makeReadAction());
 	}
 	
 	private DSAction makeReadAction() {
@@ -51,14 +51,14 @@ public abstract class ReceiverNode extends RemovableNode {
 				 return ((ReceiverNode) info.getParent()).invokeReceive(info, invocation);
 			}
 		};
-		act.addParameter("Use_Peek-Lock", DSBool.TRUE, null);
+		act.addParameter("Use Peek-Lock", DSBool.TRUE, null);
 		act.setResultType(ResultType.STREAM_TABLE);
 		return act;
 	}
 	
 	protected ActionResult invokeReceive(final DSInfo info, ActionInvocation invocation) {
 		DSMap parameters = invocation.getParameters();
-		boolean peekLock = parameters.getBoolean("Use_Peek-Lock");
+		boolean peekLock = parameters.getBoolean("Use Peek-Lock");
 		final ReceiveMessageOptions opts = ReceiveMessageOptions.DEFAULT;
 		opts.setReceiveMode(peekLock ? ReceiveMode.PEEK_LOCK : ReceiveMode.RECEIVE_AND_DELETE);
 		Receiver runnable = new Receiver(invocation, opts);
