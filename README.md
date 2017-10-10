@@ -9,7 +9,7 @@
 
 This is a link for sending and receiving messages through Microsoft Azure Service Bus.
 
-If you are not familiar with DSA and links, an overview can be found at
+If you are not familiar with DSA and links, an overview can be found
 [here](http://iot-dsa.org/get-started/how-dsa-works).
 
 This link was built using the DSLink Java SDK which can be found
