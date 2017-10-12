@@ -22,10 +22,10 @@ This section outlines the hierarchy of nodes defined by this link.
 
 - _RootNode_ - The root node of the link, has an action to add a Service Bus namespace to the view.
   - _ServiceBusNode_ - A node representing a specific Service Bus namespace, with actions to create new Queues and Topics, and add existing ones to the view.
-    - _Queues_ - - Serves as the container for Queue nodes.
-      - _QueueNode_ - -Represents a specific Queue in the Service Bus. Has actions to send/receive messages to/from the Queue.
-    - _Topics_ - - Serves as the container for Topic nodes .
-      - _TopicNode_ - -Represents a specific Topic in the Service Bus. Has actions to send messages to the Topic and add/create Subscriptions for the Topic.
+    - _Queues_ - Serves as the container for Queue nodes.
+      - _QueueNode_ - Represents a specific Queue in the Service Bus. Has actions to send/receive messages to/from the Queue.
+    - _Topics_ - Serves as the container for Topic nodes .
+      - _TopicNode_ - Represents a specific Topic in the Service Bus. Has actions to send messages to the Topic and add/create Subscriptions for the Topic.
         - _SubscriptionNode_ - Represents a specific Subscription for the Topic. Has action to read messages from the Subscription.
 
 
