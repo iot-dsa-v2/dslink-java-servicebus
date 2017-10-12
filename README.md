@@ -9,7 +9,7 @@
 
 This is a link for sending and receiving messages through Microsoft Azure Service Bus.
 
-If you are not familiar with DSA and links, an overview can be found at
+If you are not familiar with DSA and links, an overview can be found
 [here](http://iot-dsa.org/get-started/how-dsa-works).
 
 This link was built using the DSLink Java SDK which can be found
@@ -22,11 +22,11 @@ This section outlines the hierarchy of nodes defined by this link.
 
 - _RootNode_ - The root node of the link, has an action to add a Service Bus namespace to the view.
   - _ServiceBusNode_ - A node representing a specific Service Bus namespace, with actions to create new Queues and Topics, and add existing ones to the view.
-    -_Queues_- - Serves as the container for Queue nodes.
-      -_QueueNode_- -Represents a specific Queue in the Service Bus. Has actions to send/receive messages to/from the Queue.
-    -_Topics_- - Serves as the container for Topic nodes .
-      -_TopicNode_- -Represents a specific Topic in the Service Bus. Has actions to send messages to the Topic and add/create Subscriptions for the Topic.
-        -_SubscriptionNode_- Represents a specific Subscription for the Topic. Has action to read messages from the Subscription.
+    - _Queues_ - - Serves as the container for Queue nodes.
+      - _QueueNode_ - -Represents a specific Queue in the Service Bus. Has actions to send/receive messages to/from the Queue.
+    - _Topics_ - - Serves as the container for Topic nodes .
+      - _TopicNode_ - -Represents a specific Topic in the Service Bus. Has actions to send messages to the Topic and add/create Subscriptions for the Topic.
+        - _SubscriptionNode_ - Represents a specific Subscription for the Topic. Has action to read messages from the Subscription.
 
 
 ## Node Guide
@@ -43,7 +43,7 @@ This is the root node of the link.
 - Add Service Bus - Connect to a Service Bus Namespace and add a child _ServiceBusNode_ to represent it. 
 
 **Child Nodes**
- - any _ServiceBusNode_s that have been added.
+ - any _ServiceBusNodes_ that have been added.
 
 ### ServiceBusNode
 
@@ -62,8 +62,8 @@ This node represents a specific Azure Service Bus Namespace.
 - STATUS - Whether or not we successfully connected to the Service Bus.
 
 **Child Nodes**
-- Queues - All _QueueNode_s added by the above actions will be children of this node.
-- Topics - All _TopicNode_s added by the above actions will be children of this node.
+- Queues - All _QueueNodes_ added by the above actions will be children of this node.
+- Topics - All _TopicNodes_ added by the above actions will be children of this node.
 
 ### QueueNode
 
@@ -86,7 +86,7 @@ This node represents a specific Azure Service Bus Topic.
 - Add Subscription - Choose a Subscription that already exists in the namespace from the drop-down and add a child _SubscriptionNode_ to represent it.
 
 **Child Nodes**
- - any _SubscriptionNode_s that have been added.
+ - any _SubscriptionNodes_ that have been added.
  
 ### SubscriptionNode
 
