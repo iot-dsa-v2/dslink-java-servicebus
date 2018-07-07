@@ -1,6 +1,5 @@
 # dslink-java-v2-servicebus
 
-* Version: 1.0.1.0
 * Java - version 1.6 and up.
 * [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
