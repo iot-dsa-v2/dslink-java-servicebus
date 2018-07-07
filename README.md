@@ -19,7 +19,7 @@ This link was built using the DSLink Java SDK which can be found
 
 This section outlines the hierarchy of nodes defined by this link.
 
-- _RootNode_ - The root node of the link, has an action to add a Service Bus namespace to the view.
+- _MainNode_ - The root node of the link, has an action to add a Service Bus namespace to the view.
   - _ServiceBusNode_ - A node representing a specific Service Bus namespace, with actions to create new Queues and Topics, and add existing ones to the view.
     - _Queues_ - Serves as the container for Queue nodes.
       - _QueueNode_ - Represents a specific Queue in the Service Bus. Has actions to send/receive messages to/from the Queue.
@@ -34,7 +34,7 @@ The following section provides detailed descriptions of each node in the link as
 descriptions of actions, values and child nodes.
 
 
-### RootNode
+### MainNode
 
 This is the root node of the link.
 
@@ -123,6 +123,6 @@ can be found at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=blo
 
 ## History
 
-* Version 1.0.0.0
+* Version 1.0.0
   - Hello World
 
