@@ -89,8 +89,7 @@ public class QueueNode extends ReceiverNode {
         String messageText = parameters.getString("Message");
         DSMap properties = parameters.getMap("Properties");
         BrokeredMessage message = new BrokeredMessage(messageText);
-        for (int i = 0; i < properties.size(); i++) {
-            Entry entry = properties.getEntry(i);
+        for (Entry entry : properties) {
             message.setProperty(entry.getKey(), entry.getValue().toString());
         }
         try {
