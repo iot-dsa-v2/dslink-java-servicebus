@@ -30,6 +30,7 @@ public class MainNode extends DSMainNode {
         act.addDefaultParameter("Service Bus Root Uri", DSString.valueOf(".servicebus.windows.net"),
                 null);
         declareDefault("Add Service Bus", act);
+        declareDefault("Docs", DSString.valueOf("https://github.com/iot-dsa-v2/dslink-java-v2-servicebus/blob/develop/README.md")).setTransient(true).setReadOnly(true);
     }
 
     @Override
