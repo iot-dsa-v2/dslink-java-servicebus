@@ -1,18 +1,20 @@
 package org.iot.dsa.servicebus;
 
+import com.microsoft.windowsazure.exception.ServiceException;
+import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
+import com.microsoft.windowsazure.services.servicebus.models.ReceiveMessageOptions;
+import com.microsoft.windowsazure.services.servicebus.models.ReceiveMode;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 import org.iot.dsa.DSRuntime;
 import org.iot.dsa.DSRuntime.Timer;
 import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSBool;
+import org.iot.dsa.node.DSIValue;
 import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSList;
 import org.iot.dsa.node.DSMap;
@@ -20,13 +22,9 @@ import org.iot.dsa.node.DSValueType;
 import org.iot.dsa.node.action.ActionInvocation;
 import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.ActionSpec;
+import org.iot.dsa.node.action.ActionSpec.ResultType;
 import org.iot.dsa.node.action.ActionTable;
 import org.iot.dsa.node.action.DSAction;
-import org.iot.dsa.node.action.ActionSpec.ResultType;
-import com.microsoft.windowsazure.exception.ServiceException;
-import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
-import com.microsoft.windowsazure.services.servicebus.models.ReceiveMessageOptions;
-import com.microsoft.windowsazure.services.servicebus.models.ReceiveMode;
 
 /**
  * The base class for nodes that have a "Recieve Messages" action, namely QueueNode and
@@ -35,6 +33,7 @@ import com.microsoft.windowsazure.services.servicebus.models.ReceiveMode;
  * @author Daniel Shapiro
  */
 public abstract class ReceiverNode extends RemovableNode {
+
     @SuppressWarnings("serial")
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ") {
         public Date parse(String source, ParsePosition pos) {
@@ -69,28 +68,43 @@ public abstract class ReceiverNode extends RemovableNode {
         final Timer t = DSRuntime.run(runnable, System.currentTimeMillis() + 1000, 1000);
 
         return new ActionTable() {
-            private List<DSMap> cols;
-
-            @Override
-            public Iterator<DSList> getRows() {
-                return new ArrayList<DSList>().iterator();
-            }
-
-            @Override
-            public Iterator<DSMap> getColumns() {
-                if (cols == null) {
-                    cols = new ArrayList<DSMap>();
-                    cols.add(Util.makeColumn("ID", DSValueType.STRING));
-                    cols.add(Util.makeColumn("Timestamp", DSValueType.STRING));
-                    cols.add(Util.makeColumn("Body", DSValueType.STRING));
-                    cols.add(Util.makeColumn("Properties", DSValueType.MAP));
-                }
-                return cols.iterator();
-            }
 
             @Override
             public ActionSpec getAction() {
                 return info.getAction();
+            }
+
+            @Override
+            public int getColumnCount() {
+                return 4;
+            }
+
+            @Override
+            public void getMetadata(int col, DSMap bucket) {
+                switch (col) {
+                    case 0:
+                        bucket.putAll(Util.makeColumn("ID", DSValueType.STRING));
+                        break;
+                    case 1:
+                        bucket.putAll(Util.makeColumn("Timestamp", DSValueType.STRING));
+                        break;
+                    case 2:
+                        bucket.putAll(Util.makeColumn("Body", DSValueType.STRING));
+                        break;
+                    default:
+                        bucket.putAll(Util.makeColumn("Properties", DSValueType.MAP));
+                        break;
+                }
+            }
+
+            @Override
+            public DSIValue getValue(int col) {
+                return null;
+            }
+
+            @Override
+            public boolean next() {
+                return false;
             }
 
             @Override
@@ -102,6 +116,7 @@ public abstract class ReceiverNode extends RemovableNode {
     }
 
     private class Receiver implements Runnable {
+
         private ActionInvocation invocation;
         private ReceiveMessageOptions opts;
 
@@ -137,7 +152,7 @@ public abstract class ReceiverNode extends RemovableNode {
                             Util.putInMap(properties, entry.getKey(), entry.getValue());
                         }
                         invocation.send(new DSList().add(id).add(date).add(s.toString().trim())
-                                .add(properties));
+                                                    .add(properties));
                         if (opts.isPeekLock()) {
                             deleteMessage(message);
                         }
