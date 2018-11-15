@@ -74,13 +74,13 @@ public class ServiceBusNode extends RemovableNode {
         declareDefault("Queues", new DSNode());
         declareDefault("Topics", new DSNode());
 
-        declareDefault("Refresh", new DSAction());
+        declareDefault("Refresh", DSAction.DEFAULT);
         declareDefault("Create Queue", makeCreateAction());
         declareDefault("Create Topic", makeCreateAction());
     }
 
     @Override
-    public ActionResult onInvoke(DSInfo actionInfo, ActionInvocation invocation) {
+    public ActionResult invoke(DSInfo actionInfo, DSInfo targetInfo, ActionInvocation invocation) {
         if (actionInfo == null) {
             return null;
         }
@@ -164,7 +164,7 @@ public class ServiceBusNode extends RemovableNode {
         for (QueueInfo qInfo : queues) {
             queueNames.add(qInfo.getPath());
         }
-        DSAction act = new DSAction();
+        DSAction act = new DSAction.Noop();
         act.addParameter(
                 Util.makeParameter("Queue Name", null, MyValueType.enumOf(queueNames), null, null));
         return act;
@@ -175,14 +175,14 @@ public class ServiceBusNode extends RemovableNode {
         for (TopicInfo tInfo : topics) {
             topicNames.add(tInfo.getPath());
         }
-        DSAction act = new DSAction();
+        DSAction act = new DSAction.Noop();
         act.addParameter(
                 Util.makeParameter("Topic Name", null, MyValueType.enumOf(topicNames), null, null));
         return act;
     }
 
     private DSAction makeEditAction() {
-        DSAction act = new DSAction();
+        DSAction act = new DSAction.Noop();
         act.addDefaultParameter("Namespace", DSString.valueOf(namespace), null);
         act.addDefaultParameter("SAS Key Name", DSString.valueOf(keyName), null);
         act.addDefaultParameter("SAS Key", DSString.valueOf(key), null);
@@ -191,7 +191,7 @@ public class ServiceBusNode extends RemovableNode {
     }
 
     private DSAction makeCreateAction() {
-        DSAction act = new DSAction();
+        DSAction act = new DSAction.Noop();
         act.addParameter("Name", DSString.NULL, null);
         return act;
     }

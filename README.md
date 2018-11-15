@@ -1,6 +1,6 @@
 # dslink-java-v2-servicebus
 
-* Java - version 1.6 and up.
+* Java - version 1.8 and up.
 * [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 
@@ -120,9 +120,4 @@ This software contains unmodified binary redistributions of
 [commons-lang3](https://commons.apache.org/proper/commons-lang/), 
 which is licensed and available under the Apache License 2.0. An original copy of the license agreement 
 can be found at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=blob;f=LICENSE.txt;h=d645695673349e3947e8e5ae42332d0ac3164cd7;hb=HEAD
-
-## History
-
-* Version 1.0.0
-  - Hello World
 

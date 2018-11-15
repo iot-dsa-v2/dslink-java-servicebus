@@ -1,10 +1,10 @@
 {
   "name": "dslink-java-v2-servicebus",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Azure Service Bus DSLink",
   "main": "bin/dslink-java-v2-servicebus",
   "configs": {
-    "handler_class": {
+    "main-node": {
       "type": "string",
       "value": "org.iot.dsa.servicebus.MainNode"
     },

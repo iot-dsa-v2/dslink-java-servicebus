@@ -87,10 +87,10 @@ public class TopicNode extends RemovableNode {
     }
 
     private DSAction makeRefreshAction() {
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((TopicNode) info.getParent()).init();
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((TopicNode) target.get()).init();
                 return null;
             }
         };
@@ -102,10 +102,10 @@ public class TopicNode extends RemovableNode {
         for (SubscriptionInfo sInfo : subscriptions) {
             subNames.add(sInfo.getName());
         }
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((TopicNode) info.getParent()).addSubscription(invocation.getParameters());
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((TopicNode) target.get()).addSubscription(invocation.getParameters());
                 return null;
             }
         };
@@ -115,10 +115,10 @@ public class TopicNode extends RemovableNode {
     }
 
     private DSAction makeSendAction() {
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((TopicNode) info.getParent()).handleSend(invocation.getParameters());
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((TopicNode) target.get()).handleSend(invocation.getParameters());
                 return null;
             }
         };
@@ -128,10 +128,10 @@ public class TopicNode extends RemovableNode {
     }
 
     private DSAction makeCreateSubscriptionAction() {
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((TopicNode) info.getParent()).createSubscription(invocation.getParameters());
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((TopicNode) target.get()).createSubscription(invocation.getParameters());
                 return null;
             }
         };
@@ -141,10 +141,10 @@ public class TopicNode extends RemovableNode {
 
     @Override
     protected DSAction makeRemoveAction() {
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((TopicNode) info.getParent()).handleDelete(invocation.getParameters());
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((TopicNode) target.get()).handleDelete(invocation.getParameters());
                 return null;
             }
         };

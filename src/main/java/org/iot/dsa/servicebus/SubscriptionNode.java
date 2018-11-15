@@ -53,10 +53,10 @@ public class SubscriptionNode extends ReceiverNode {
 
     @Override
     protected DSAction makeRemoveAction() {
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((SubscriptionNode) info.getParent()).handleDelete(invocation.getParameters());
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((SubscriptionNode) target.get()).handleDelete(invocation.getParameters());
                 return null;
             }
         };
