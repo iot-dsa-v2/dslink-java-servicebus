@@ -17,28 +17,26 @@ import org.iot.dsa.node.action.DSAction;
  */
 public class MainNode extends DSMainNode {
 
-    private DSInfo addServiceBus = getInfo("Add Service Bus");
-
     @Override
     protected void declareDefaults() {
-        DSAction act = new DSAction();
+        DSAction act = new DSAction.Parameterless() {
+            @Override
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((MainNode) target.get()).handleAddServiceBus(invocation.getParameters());
+                return null;
+            }
+        };
         act.addParameter("Name", DSValueType.STRING, null);
         act.addParameter("Namespace", DSValueType.STRING, null);
         act.addDefaultParameter("SAS Key Name", DSString.valueOf("RootManageSharedAccessKey"),
-                null);
+                                null);
         act.addParameter("SAS Key", DSValueType.STRING, null);
         act.addDefaultParameter("Service Bus Root Uri", DSString.valueOf(".servicebus.windows.net"),
-                null);
+                                null);
         declareDefault("Add Service Bus", act);
-        declareDefault("Docs", DSString.valueOf("https://github.com/iot-dsa-v2/dslink-java-v2-servicebus/blob/develop/README.md")).setTransient(true).setReadOnly(true);
-    }
-
-    @Override
-    public ActionResult onInvoke(DSInfo actionInfo, ActionInvocation invocation) {
-        if (actionInfo == this.addServiceBus) {
-            handleAddServiceBus(invocation.getParameters());
-        }
-        return null;
+        declareDefault("Docs", DSString.valueOf(
+                "https://github.com/iot-dsa-v2/dslink-java-v2-servicebus/blob/develop/README.md"))
+                .setTransient(true).setReadOnly(true);
     }
 
     private void handleAddServiceBus(DSMap parameters) {

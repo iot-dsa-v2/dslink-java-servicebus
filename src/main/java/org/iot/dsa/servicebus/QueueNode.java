@@ -59,10 +59,10 @@ public class QueueNode extends ReceiverNode {
     }
 
     private DSAction makeSendAction() {
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((QueueNode) info.getParent()).handleSend(invocation.getParameters());
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((QueueNode) target.get()).handleSend(invocation.getParameters());
                 return null;
             }
         };
@@ -73,10 +73,10 @@ public class QueueNode extends ReceiverNode {
 
     @Override
     protected DSAction makeRemoveAction() {
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((QueueNode) info.getParent()).handleDelete(invocation.getParameters());
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((QueueNode) target.get()).handleDelete(invocation.getParameters());
                 return null;
             }
         };

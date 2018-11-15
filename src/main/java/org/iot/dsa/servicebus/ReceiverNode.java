@@ -48,10 +48,10 @@ public abstract class ReceiverNode extends RemovableNode {
     }
 
     private DSAction makeReadAction() {
-        DSAction act = new DSAction() {
+        DSAction act = new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                return ((ReceiverNode) info.getParent()).invokeReceive(info, invocation);
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                return ((ReceiverNode) target.get()).invokeReceive(this, invocation);
             }
         };
         act.addParameter("Use Peek-Lock", DSBool.TRUE, null);
@@ -59,7 +59,7 @@ public abstract class ReceiverNode extends RemovableNode {
         return act;
     }
 
-    protected ActionResult invokeReceive(final DSInfo info, ActionInvocation invocation) {
+    protected ActionResult invokeReceive(final DSAction action, ActionInvocation invocation) {
         DSMap parameters = invocation.getParameters();
         boolean peekLock = parameters.getBoolean("Use Peek-Lock");
         final ReceiveMessageOptions opts = ReceiveMessageOptions.DEFAULT;
@@ -71,7 +71,7 @@ public abstract class ReceiverNode extends RemovableNode {
 
             @Override
             public ActionSpec getAction() {
-                return info.getAction();
+                return action;
             }
 
             @Override
