@@ -9,7 +9,7 @@
       "value": "org.iot.dsa.servicebus.MainNode"
     },
     "log": {
-      "desc": "debug, info, warn, error, none",
+      "desc": "all, trace, debug, info, warn, error, none",
       "type": "enum",
       "value": "info"
     }
