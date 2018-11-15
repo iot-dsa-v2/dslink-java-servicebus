@@ -19,10 +19,10 @@ public class RemovableNode extends DSNode {
     }
 
     protected DSAction makeRemoveAction() {
-        return new DSAction() {
+        return new DSAction.Parameterless() {
             @Override
-            public ActionResult invoke(DSInfo info, ActionInvocation invocation) {
-                ((RemovableNode) info.getParent()).delete();
+            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
+                ((RemovableNode) target.get()).delete();
                 return null;
             }
         };
