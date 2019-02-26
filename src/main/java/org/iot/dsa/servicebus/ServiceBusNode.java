@@ -152,7 +152,7 @@ public class ServiceBusNode extends RemovableNode {
         edit = put("Edit", makeEditAction()).setTransient(true);
 
         for (DSInfo info : topicsNode) {
-            DSIObject n = info.getObject();
+            DSIObject n = info.get();
             if (n instanceof TopicNode) {
                 ((TopicNode) n).init();
             }
