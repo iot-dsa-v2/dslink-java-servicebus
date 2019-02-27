@@ -1,6 +1,6 @@
 {
   "name": "dslink-java-v2-servicebus",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Azure Service Bus DSLink",
   "main": "bin/dslink-java-v2-servicebus",
   "configs": {
