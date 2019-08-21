@@ -1,21 +1,18 @@
-import groovy.json.JsonSlurper
-
-apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'java'
 
-group 'org.iot-dsa'
+// Version is taken from dslink.json
+import groovy.json.JsonSlurper
+build {
+    version = new JsonSlurper().parseText(file('dslink.json').text).version
+}
+
 mainClassName = 'org.iot.dsa.dslink.DSLink'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-build {
-    def inputFile = file('dslink.json')
-    def json = new JsonSlurper().parseText(inputFile.text)
-    version = json.version
-}
-
 repositories {
-    //mavenLocal()
+    mavenLocal()
     jcenter()
     maven {
         url 'https://jitpack.io'
@@ -24,7 +21,7 @@ repositories {
 
 dependencies {
     //implementation 'org.iot-dsa:dslink-v2-websocket:+' //for a locally installed sdk
-    implementation 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:0.63.0'
+    implementation 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:0.67.0'
     implementation 'com.microsoft.azure:azure-servicebus:0.+'
     implementation 'org.apache.commons:commons-lang3:+'
 }
@@ -45,5 +42,5 @@ run {
 }
 
 wrapper {
-    gradleVersion = '5.4.1'
+    gradleVersion = '5.6'
 }
