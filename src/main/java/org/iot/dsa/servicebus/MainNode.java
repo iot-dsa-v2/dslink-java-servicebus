@@ -1,13 +1,11 @@
 package org.iot.dsa.servicebus;
 
+import org.iot.dsa.dslink.ActionResults;
 import org.iot.dsa.dslink.DSMainNode;
-import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.DSValueType;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
 
 
 /**
@@ -19,18 +17,18 @@ public class MainNode extends DSMainNode {
 
     @Override
     protected void declareDefaults() {
-        DSAction act = new DSAction.Parameterless() {
+        DSAction act = new DSAction() {
             @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((MainNode) target.get()).handleAddServiceBus(invocation.getParameters());
+            public ActionResults invoke(DSIActionRequest req) {
+                ((MainNode) req.getTarget()).handleAddServiceBus(req.getParameters());
                 return null;
             }
         };
-        act.addParameter("Name", DSValueType.STRING, null);
-        act.addParameter("Namespace", DSValueType.STRING, null);
+        act.addParameter("Name", DSString.NULL, null);
+        act.addParameter("Namespace", DSString.NULL, null);
         act.addDefaultParameter("SAS Key Name", DSString.valueOf("RootManageSharedAccessKey"),
                                 null);
-        act.addParameter("SAS Key", DSValueType.STRING, null);
+        act.addParameter("SAS Key", DSString.NULL, null);
         act.addDefaultParameter("Service Bus Root Uri", DSString.valueOf(".servicebus.windows.net"),
                                 null);
         declareDefault("Add Service Bus", act);

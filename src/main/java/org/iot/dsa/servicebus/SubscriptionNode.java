@@ -1,18 +1,17 @@
 package org.iot.dsa.servicebus;
 
-import org.iot.dsa.dslink.DSRequestException;
-import org.iot.dsa.node.DSBool;
-import org.iot.dsa.node.DSInfo;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSNode;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.DSAction;
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveMessageOptions;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveSubscriptionMessageResult;
 import com.microsoft.windowsazure.services.servicebus.models.SubscriptionInfo;
+import org.iot.dsa.dslink.ActionResults;
+import org.iot.dsa.dslink.DSRequestException;
+import org.iot.dsa.node.DSBool;
+import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSNode;
+import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
 
 /**
  * An instance of this node represents a specific Subscription for an Azure Service Bus Topic.
@@ -38,6 +37,36 @@ public class SubscriptionNode extends ReceiverNode {
     }
 
     @Override
+    public void deleteMessage(BrokeredMessage message) {
+        try {
+            topicNode.getService().deleteMessage(message);
+        } catch (ServiceException e) {
+            warn("Error Deleting Message: " + e);
+        }
+    }
+
+    @Override
+    public BrokeredMessage receiveMessage(ReceiveMessageOptions opts) throws ServiceException {
+        ReceiveSubscriptionMessageResult resultSubMsg;
+        resultSubMsg = topicNode.getService().receiveSubscriptionMessage(topicNode.getTopicName(),
+                                                                         info.getName(), opts);
+        return resultSubMsg.getValue();
+    }
+
+    @Override
+    protected DSAction makeRemoveAction() {
+        DSAction act = new DSAction() {
+            @Override
+            public ActionResults invoke(DSIActionRequest req) {
+                ((SubscriptionNode) req.getTarget()).handleDelete(req.getParameters());
+                return null;
+            }
+        };
+        act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
+        return act;
+    }
+
+    @Override
     protected void onStable() {
         if (topicNode == null) {
             DSNode n = getParent();
@@ -50,21 +79,6 @@ public class SubscriptionNode extends ReceiverNode {
         }
     }
 
-
-    @Override
-    protected DSAction makeRemoveAction() {
-        DSAction act = new DSAction.Parameterless() {
-            @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((SubscriptionNode) target.get()).handleDelete(invocation.getParameters());
-                return null;
-            }
-        };
-        act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
-        return act;
-    }
-
-
     private void handleDelete(DSMap parameters) {
         if (parameters.get("Delete From Namespace", false)) {
             try {
@@ -75,23 +89,6 @@ public class SubscriptionNode extends ReceiverNode {
             }
         }
         delete();
-    }
-
-    @Override
-    public BrokeredMessage receiveMessage(ReceiveMessageOptions opts) throws ServiceException {
-        ReceiveSubscriptionMessageResult resultSubMsg;
-        resultSubMsg = topicNode.getService().receiveSubscriptionMessage(topicNode.getTopicName(),
-                info.getName(), opts);
-        return resultSubMsg.getValue();
-    }
-
-    @Override
-    public void deleteMessage(BrokeredMessage message) {
-        try {
-            topicNode.getService().deleteMessage(message);
-        } catch (ServiceException e) {
-            warn("Error Deleting Message: " + e);
-        }
     }
 
 }

@@ -1,24 +1,23 @@
 package org.iot.dsa.servicebus;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.iot.dsa.dslink.DSRequestException;
-import org.iot.dsa.node.DSBool;
-import org.iot.dsa.node.DSInfo;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSNode;
-import org.iot.dsa.node.DSMap.Entry;
-import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.DSAction;
-import org.iot.dsa.servicebus.Util.MyValueType;
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.ServiceBusContract;
 import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
 import com.microsoft.windowsazure.services.servicebus.models.ListSubscriptionsResult;
 import com.microsoft.windowsazure.services.servicebus.models.SubscriptionInfo;
 import com.microsoft.windowsazure.services.servicebus.models.TopicInfo;
+import java.util.ArrayList;
+import java.util.List;
+import org.iot.dsa.dslink.ActionResults;
+import org.iot.dsa.dslink.DSRequestException;
+import org.iot.dsa.node.DSBool;
+import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSMap.Entry;
+import org.iot.dsa.node.DSNode;
+import org.iot.dsa.node.DSString;
+import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
+import org.iot.dsa.servicebus.Util.MyValueType;
 
 /**
  * An instance of this node represents a specific Azure Service Bus Topic.
@@ -60,6 +59,19 @@ public class TopicNode extends RemovableNode {
     }
 
     @Override
+    protected DSAction makeRemoveAction() {
+        DSAction act = new DSAction() {
+            @Override
+            public ActionResults invoke(DSIActionRequest req) {
+                ((TopicNode) req.getTarget()).handleDelete(req.getParameters());
+                return null;
+            }
+        };
+        act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
+        return act;
+    }
+
+    @Override
     protected void onStable() {
         if (serviceNode == null) {
             DSNode n = getParent();
@@ -86,92 +98,10 @@ public class TopicNode extends RemovableNode {
         }
     }
 
-    private DSAction makeRefreshAction() {
-        DSAction act = new DSAction.Parameterless() {
-            @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((TopicNode) target.get()).init();
-                return null;
-            }
-        };
-        return act;
-    }
-
-    private DSAction makeAddSubscriptionAction(List<SubscriptionInfo> subscriptions) {
-        List<String> subNames = new ArrayList<String>();
-        for (SubscriptionInfo sInfo : subscriptions) {
-            subNames.add(sInfo.getName());
-        }
-        DSAction act = new DSAction.Parameterless() {
-            @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((TopicNode) target.get()).addSubscription(invocation.getParameters());
-                return null;
-            }
-        };
-        act.addParameter(Util.makeParameter("Subscription Name", null, MyValueType.enumOf(subNames),
-                null, null));
-        return act;
-    }
-
-    private DSAction makeSendAction() {
-        DSAction act = new DSAction.Parameterless() {
-            @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((TopicNode) target.get()).handleSend(invocation.getParameters());
-                return null;
-            }
-        };
-        act.addParameter("Message", DSString.NULL, null);
-        act.addDefaultParameter("Properties", new DSMap(), null);
-        return act;
-    }
-
-    private DSAction makeCreateSubscriptionAction() {
-        DSAction act = new DSAction.Parameterless() {
-            @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((TopicNode) target.get()).createSubscription(invocation.getParameters());
-                return null;
-            }
-        };
-        act.addParameter("Name", DSString.NULL, null);
-        return act;
-    }
-
-    @Override
-    protected DSAction makeRemoveAction() {
-        DSAction act = new DSAction.Parameterless() {
-            @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((TopicNode) target.get()).handleDelete(invocation.getParameters());
-                return null;
-            }
-        };
-        act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
-        return act;
-    }
-
-
     private void addSubscription(DSMap parameters) {
         String name = parameters.getString("Subscription Name");
         SubscriptionInfo sInfo = new SubscriptionInfo(name);
         add(sInfo.getName(), new SubscriptionNode(sInfo, this));
-    }
-
-    private void handleSend(DSMap parameters) {
-        String messageText = parameters.getString("Message");
-        DSMap properties = parameters.getMap("Properties");
-        BrokeredMessage message = new BrokeredMessage(messageText);
-        for (Entry entry : properties) {
-            message.setProperty(entry.getKey(), entry.getValue().toString());
-        }
-        try {
-            getService().sendTopicMessage(info.getPath(), message);
-        } catch (ServiceException e) {
-            warn("Error Sending Message: " + e);
-            throw new DSRequestException(e.getMessage());
-        }
     }
 
     private void createSubscription(DSMap parameters) {
@@ -196,6 +126,74 @@ public class TopicNode extends RemovableNode {
             }
         }
         delete();
+    }
+
+    private void handleSend(DSMap parameters) {
+        String messageText = parameters.getString("Message");
+        DSMap properties = parameters.getMap("Properties");
+        BrokeredMessage message = new BrokeredMessage(messageText);
+        for (Entry entry : properties) {
+            message.setProperty(entry.getKey(), entry.getValue().toString());
+        }
+        try {
+            getService().sendTopicMessage(info.getPath(), message);
+        } catch (ServiceException e) {
+            warn("Error Sending Message: " + e);
+            throw new DSRequestException(e.getMessage());
+        }
+    }
+
+    private DSAction makeAddSubscriptionAction(List<SubscriptionInfo> subscriptions) {
+        List<String> subNames = new ArrayList<String>();
+        for (SubscriptionInfo sInfo : subscriptions) {
+            subNames.add(sInfo.getName());
+        }
+        DSAction act = new DSAction() {
+            @Override
+            public ActionResults invoke(DSIActionRequest req) {
+                ((TopicNode) req.getTarget()).addSubscription(req.getParameters());
+                return null;
+            }
+        };
+        act.addParameter(Util.makeParameter("Subscription Name", null, MyValueType.enumOf(subNames),
+                                            null, null));
+        return act;
+    }
+
+    private DSAction makeCreateSubscriptionAction() {
+        DSAction act = new DSAction() {
+            @Override
+            public ActionResults invoke(DSIActionRequest req) {
+                ((TopicNode) req.getTarget()).createSubscription(req.getParameters());
+                return null;
+            }
+        };
+        act.addParameter("Name", DSString.NULL, null);
+        return act;
+    }
+
+    private DSAction makeRefreshAction() {
+        DSAction act = new DSAction() {
+            @Override
+            public ActionResults invoke(DSIActionRequest req) {
+                ((TopicNode) req.getTarget()).init();
+                return null;
+            }
+        };
+        return act;
+    }
+
+    private DSAction makeSendAction() {
+        DSAction act = new DSAction() {
+            @Override
+            public ActionResults invoke(DSIActionRequest req) {
+                ((TopicNode) req.getTarget()).handleSend(req.getParameters());
+                return null;
+            }
+        };
+        act.addParameter("Message", DSString.NULL, null);
+        act.addDefaultParameter("Properties", new DSMap(), null);
+        return act;
     }
 
 

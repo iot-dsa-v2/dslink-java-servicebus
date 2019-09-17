@@ -1,10 +1,9 @@
 package org.iot.dsa.servicebus;
 
-import org.iot.dsa.node.DSInfo;
+import org.iot.dsa.dslink.ActionResults;
 import org.iot.dsa.node.DSNode;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
 import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
 
 /**
  * The base class for any node that has a "remove" action.
@@ -13,23 +12,23 @@ import org.iot.dsa.node.action.DSAction;
  */
 public class RemovableNode extends DSNode {
 
+    public void delete() {
+        getParent().remove(getName());
+    }
+
     @Override
     protected void declareDefaults() {
         declareDefault("Remove", makeRemoveAction());
     }
 
     protected DSAction makeRemoveAction() {
-        return new DSAction.Parameterless() {
+        return new DSAction() {
             @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((RemovableNode) target.get()).delete();
+            public ActionResults invoke(DSIActionRequest req) {
+                ((RemovableNode) req.getTarget()).delete();
                 return null;
             }
         };
-    }
-
-    public void delete() {
-        getParent().remove(getName());
     }
 
 }

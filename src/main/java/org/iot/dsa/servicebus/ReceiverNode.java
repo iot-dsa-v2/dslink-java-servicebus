@@ -12,6 +12,8 @@ import java.util.Date;
 import java.util.Map.Entry;
 import org.iot.dsa.DSRuntime;
 import org.iot.dsa.DSRuntime.Timer;
+import org.iot.dsa.dslink.Action.ResultsType;
+import org.iot.dsa.dslink.ActionResults;
 import org.iot.dsa.dslink.DSRequestException;
 import org.iot.dsa.node.DSBool;
 import org.iot.dsa.node.DSIValue;
@@ -19,11 +21,9 @@ import org.iot.dsa.node.DSInfo;
 import org.iot.dsa.node.DSList;
 import org.iot.dsa.node.DSMap;
 import org.iot.dsa.node.DSValueType;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.ActionSpec;
-import org.iot.dsa.node.action.ActionSpec.ResultType;
-import org.iot.dsa.node.action.ActionTable;
+import org.iot.dsa.node.action.DSActionResults;
+import org.iot.dsa.node.action.DSIActionRequest;
+import org.iot.dsa.node.action.DSIAction;
 import org.iot.dsa.node.action.DSAction;
 
 /**
@@ -48,31 +48,25 @@ public abstract class ReceiverNode extends RemovableNode {
     }
 
     private DSAction makeReadAction() {
-        DSAction act = new DSAction.Parameterless() {
+        DSAction act = new DSAction() {
             @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                return ((ReceiverNode) target.get()).invokeReceive(this, invocation);
+            public ActionResults invoke(DSIActionRequest req) {
+                return ((ReceiverNode) req.getTarget()).invokeReceive(req);
             }
         };
         act.addParameter("Use Peek-Lock", DSBool.TRUE, null);
-        act.setResultType(ResultType.STREAM_TABLE);
+        act.setResultsType(ResultsType.STREAM);
         return act;
     }
 
-    protected ActionResult invokeReceive(final DSAction action, ActionInvocation invocation) {
-        DSMap parameters = invocation.getParameters();
+    protected ActionResults invokeReceive(final DSIActionRequest req) {
+        DSMap parameters = req.getParameters();
         boolean peekLock = parameters.getBoolean("Use Peek-Lock");
         final ReceiveMessageOptions opts = ReceiveMessageOptions.DEFAULT;
         opts.setReceiveMode(peekLock ? ReceiveMode.PEEK_LOCK : ReceiveMode.RECEIVE_AND_DELETE);
-        Receiver runnable = new Receiver(invocation, opts);
-        final Timer t = DSRuntime.run(runnable, System.currentTimeMillis() + 1000, 1000);
-
-        return new ActionTable() {
-
-            @Override
-            public ActionSpec getAction() {
-                return action;
-            }
+        Receiver receiver = new Receiver(req, opts);
+        final Timer t = DSRuntime.run(receiver, System.currentTimeMillis() + 1000, 1000);
+        final DSActionResults ret = new DSActionResults(req) {
 
             @Override
             public int getColumnCount() {
@@ -80,7 +74,7 @@ public abstract class ReceiverNode extends RemovableNode {
             }
 
             @Override
-            public void getMetadata(int col, DSMap bucket) {
+            public void getColumnMetadata(int col, DSMap bucket) {
                 switch (col) {
                     case 0:
                         bucket.putAll(Util.makeColumn("ID", DSValueType.STRING));
@@ -98,37 +92,29 @@ public abstract class ReceiverNode extends RemovableNode {
             }
 
             @Override
-            public DSIValue getValue(int col) {
-                return null;
-            }
-
-            @Override
-            public boolean next() {
-                return false;
-            }
-
-            @Override
             public void onClose() {
                 t.cancel();
             }
         };
 
+        receiver.setActionResults(ret);
+        return ret;
     }
 
     private class Receiver implements Runnable {
 
-        private ActionInvocation invocation;
+        private DSIActionRequest req;
         private ReceiveMessageOptions opts;
+        private DSActionResults results;
 
-        public Receiver(ActionInvocation invocation, ReceiveMessageOptions opts) {
-            super();
-            this.invocation = invocation;
+        public Receiver(DSIActionRequest req, ReceiveMessageOptions opts) {
+            this.req = req;
             this.opts = opts;
         }
 
         @Override
         public void run() {
-            while (invocation.isOpen()) {
+            while (req.isOpen()) {
                 try {
                     BrokeredMessage message = receiveMessage(opts);
                     if (message == null) {
@@ -151,7 +137,7 @@ public abstract class ReceiverNode extends RemovableNode {
                         for (Entry<String, Object> entry : message.getProperties().entrySet()) {
                             Util.putInMap(properties, entry.getKey(), entry.getValue());
                         }
-                        invocation.send(new DSList().add(id).add(date).add(s.toString().trim())
+                        results.addResults(new DSList().add(id).add(date).add(s.toString().trim())
                                                     .add(properties));
                         if (opts.isPeekLock()) {
                             deleteMessage(message);
@@ -159,9 +145,13 @@ public abstract class ReceiverNode extends RemovableNode {
                     }
                 } catch (ServiceException e) {
                     warn("Error Receiving Message: " + e);
-                    invocation.close(new DSRequestException(e.getMessage()));
+                    req.close(e);
                 }
             }
+        }
+
+        void setActionResults(DSActionResults results) {
+            this.results = results;
         }
     }
 

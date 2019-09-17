@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     //implementation 'org.iot-dsa:dslink-v2-websocket:+' //for a locally installed sdk
-    implementation 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:0.67.0'
+    implementation 'com.github.iot-dsa-v2.sdk-dslink-java-v2:dslink-v2-websocket:0.69.0'
     implementation 'com.microsoft.azure:azure-servicebus:0.+'
     implementation 'org.apache.commons:commons-lang3:+'
 }

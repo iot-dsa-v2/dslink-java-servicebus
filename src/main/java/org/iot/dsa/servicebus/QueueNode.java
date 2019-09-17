@@ -1,20 +1,19 @@
 package org.iot.dsa.servicebus;
 
-import org.iot.dsa.dslink.DSRequestException;
-import org.iot.dsa.node.DSBool;
-import org.iot.dsa.node.DSInfo;
-import org.iot.dsa.node.DSMap;
-import org.iot.dsa.node.DSNode;
-import org.iot.dsa.node.DSMap.Entry;
-import org.iot.dsa.node.DSString;
-import org.iot.dsa.node.action.ActionInvocation;
-import org.iot.dsa.node.action.ActionResult;
-import org.iot.dsa.node.action.DSAction;
 import com.microsoft.windowsazure.exception.ServiceException;
 import com.microsoft.windowsazure.services.servicebus.models.BrokeredMessage;
 import com.microsoft.windowsazure.services.servicebus.models.QueueInfo;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveMessageOptions;
 import com.microsoft.windowsazure.services.servicebus.models.ReceiveQueueMessageResult;
+import org.iot.dsa.dslink.ActionResults;
+import org.iot.dsa.dslink.DSRequestException;
+import org.iot.dsa.node.DSBool;
+import org.iot.dsa.node.DSMap;
+import org.iot.dsa.node.DSMap.Entry;
+import org.iot.dsa.node.DSNode;
+import org.iot.dsa.node.DSString;
+import org.iot.dsa.node.action.DSAction;
+import org.iot.dsa.node.action.DSIActionRequest;
 
 
 /**
@@ -30,7 +29,8 @@ public class QueueNode extends ReceiverNode {
     /**
      * Do not use
      */
-    public QueueNode() {}
+    public QueueNode() {
+    }
 
     public QueueNode(QueueInfo info, ServiceBusNode serviceNode) {
         super();
@@ -39,9 +39,38 @@ public class QueueNode extends ReceiverNode {
     }
 
     @Override
+    public void deleteMessage(BrokeredMessage message) {
+        try {
+            serviceNode.getService().deleteMessage(message);
+        } catch (ServiceException e) {
+            warn("Error Deleting Message: " + e);
+        }
+    }
+
+    @Override
+    public BrokeredMessage receiveMessage(ReceiveMessageOptions opts) throws ServiceException {
+        ReceiveQueueMessageResult resultQM;
+        resultQM = serviceNode.getService().receiveQueueMessage(info.getPath(), opts);
+        return resultQM.getValue();
+    }
+
+    @Override
     protected void declareDefaults() {
         super.declareDefaults();
         declareDefault("Send Message", makeSendAction());
+    }
+
+    @Override
+    protected DSAction makeRemoveAction() {
+        DSAction act = new DSAction() {
+            @Override
+            public ActionResults invoke(DSIActionRequest req) {
+                ((QueueNode) req.getTarget()).handleDelete(req.getParameters());
+                return null;
+            }
+        };
+        act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
+        return act;
     }
 
     @Override
@@ -58,32 +87,18 @@ public class QueueNode extends ReceiverNode {
         }
     }
 
-    private DSAction makeSendAction() {
-        DSAction act = new DSAction.Parameterless() {
-            @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((QueueNode) target.get()).handleSend(invocation.getParameters());
-                return null;
+    private void handleDelete(DSMap parameters) {
+        if (parameters.get("Delete From Namespace", false)) {
+            try {
+                serviceNode.getService().deleteQueue(info.getPath());
+                ;
+            } catch (ServiceException e) {
+                warn("Error Deleting Queue: " + e);
+                throw new DSRequestException(e.getMessage());
             }
-        };
-        act.addParameter("Message", DSString.NULL, null);
-        act.addDefaultParameter("Properties", new DSMap(), null);
-        return act;
+        }
+        delete();
     }
-
-    @Override
-    protected DSAction makeRemoveAction() {
-        DSAction act = new DSAction.Parameterless() {
-            @Override
-            public ActionResult invoke(DSInfo target, ActionInvocation invocation) {
-                ((QueueNode) target.get()).handleDelete(invocation.getParameters());
-                return null;
-            }
-        };
-        act.addDefaultParameter("Delete From Namespace", DSBool.FALSE, null);
-        return act;
-    }
-
 
     private void handleSend(DSMap parameters) {
         String messageText = parameters.getString("Message");
@@ -100,31 +115,16 @@ public class QueueNode extends ReceiverNode {
         }
     }
 
-    private void handleDelete(DSMap parameters) {
-        if (parameters.get("Delete From Namespace", false)) {
-            try {
-                serviceNode.getService().deleteQueue(info.getPath());;
-            } catch (ServiceException e) {
-                warn("Error Deleting Queue: " + e);
-                throw new DSRequestException(e.getMessage());
+    private DSAction makeSendAction() {
+        DSAction act = new DSAction() {
+            @Override
+            public ActionResults invoke(DSIActionRequest req) {
+                ((QueueNode) req.getTarget()).handleSend(req.getParameters());
+                return null;
             }
-        }
-        delete();
-    }
-
-    @Override
-    public BrokeredMessage receiveMessage(ReceiveMessageOptions opts) throws ServiceException {
-        ReceiveQueueMessageResult resultQM;
-        resultQM = serviceNode.getService().receiveQueueMessage(info.getPath(), opts);
-        return resultQM.getValue();
-    }
-
-    @Override
-    public void deleteMessage(BrokeredMessage message) {
-        try {
-            serviceNode.getService().deleteMessage(message);
-        } catch (ServiceException e) {
-            warn("Error Deleting Message: " + e);
-        }
+        };
+        act.addParameter("Message", DSString.NULL, null);
+        act.addDefaultParameter("Properties", new DSMap(), null);
+        return act;
     }
 }
